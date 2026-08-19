@@ -1,0 +1,36 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# private working files (never shipped)
+private/
+HOW-IT-WORKS.md
+
+# local / generated
+__pycache__/
+*.pyc
+.pytest_cache/
+.vercel
+node_modules/
+.DS_Store
+
+# not ours to redistribute / not part of the deliverable
+Claude.dmg
+*.dmg
+TASC_Candidate_Assignment_Instructions.pdf
+
+# tooling / environments (may embed absolute local paths)
+.claude/
+venv/
+.venv/
+.venv-simcache/
+.python-version
+pyproject.toml
+uv.lock
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+*.pdf
+.env*
+!.env.example

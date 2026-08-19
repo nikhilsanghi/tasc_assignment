@@ -1,0 +1,41 @@
+{
+  "_meta": {
+    "note": "keys and values are casefolded tokens; alias beats semantic (tier order 1,2,3)"
+  },
+  "expand": {
+    "python/r": ["python", "r"],
+    "aws/azure": ["aws", "azure"],
+    "crm tools (salesforce/hubspot)": ["crm", "salesforce", "hubspot"],
+    "erp systems (sap/oracle)": ["erp", "sap", "oracle"],
+    "hris systems (workday/sap successfactors)": ["hris", "workday", "successfactors"],
+    "ticketing systems (zendesk)": ["ticketing systems", "zendesk"],
+    "monitoring tools (datadog/prometheus)": ["monitoring", "datadog", "prometheus"],
+    "excel/advanced": ["excel", "advanced excel"],
+    "ci/cd pipelines": ["ci/cd", "pipelines"],
+    "bilingual arabic/english": ["bilingual", "arabic", "english"],
+    "arabic + english bilingual": ["arabic", "english", "bilingual"],
+    "gcc cross-border experience": ["gcc", "cross-border"],
+    "fluent arabic & english": ["arabic", "english", "fluent"],
+    "arabic fluency": ["arabic", "fluency"],
+    "budgeting & forecasting": ["budgeting", "forecasting"],
+    "ci/cd": ["ci/cd"],
+    "compensation & benefits": ["compensation", "benefits"],
+    "crm (salesforce)": ["crm", "salesforce"],
+    "crm tools": ["crm"],
+    "greenhouse/lever": ["greenhouse", "lever"],
+    "m&a support": ["m&a", "mergers and acquisitions"],
+    "monitoring (datadog/prometheus)": ["monitoring", "datadog", "prometheus"],
+    "oracle erp": ["oracle", "erp"],
+    "sap fico": ["sap", "fico"],
+    "seo/sem": ["seo", "sem"],
+    "gcc regulatory frameworks": ["gcc", "regulatory frameworks"]
+  },
+  "synonyms": {
+    "a/b testing experience": ["a/b testing"],
+    "b2b outreach": ["outbound prospecting", "lead generation", "cold calling", "b2b sales"],
+    "b2b saas experience": ["b2b sales"],
+    "saas sales experience": ["b2b sales"],
+    "tech hiring experience": ["technical hiring"],
+    "budgeting": ["budgeting & forecasting"]
+  }
+}

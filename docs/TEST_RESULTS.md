@@ -1,0 +1,224 @@
+# TEST_RESULTS.md — evidence log (updated at every phase gate)
+
+Test IDs and their expected results are defined in `TEST_PLAN.md`. This file records what actually happened.
+
+**Rules.** Paste **real** command output (trimmed, never edited in substance; absolute machine paths redacted to `<repo>`). Status ∈ `pending | green | red`. A phase's `gate` line is set to `approved <date>` only by the Owner. Never mark an ID green without evidence in the Evidence column or the run log beneath the table.
+
+---
+
+## Phase 0 — scaffold, data facts, aliases, similarity cache, style gate, deploy spike
+status: green · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P0-U1 test_data_facts | green | `pytest -q` includes `tests/test_data_facts.py::test_data_facts_match_expected` PASS (see run log) |
+| P0-U2 test_similarity_cache | green | `pytest -q` includes 4 tests in `tests/test_similarity_cache.py` PASS (see run log) |
+| P0-U3 test_api_health | green | `pytest -q` includes 3 tests in `tests/test_api_health.py` PASS (see run log) |
+| P0-M1 profile_data.py PASS table | green | all 24 facts PASS, exit 0 (see run log) |
+| P0-M2 check_style.py exit 0 | green | 4/4 checks PASS, exit 0 (see run log) |
+| P0-M3 similarity spot check | green | `rest apis` top-3 includes `rest api design` @ 0.802 (≥0.75); `kafka` best neighbor 0.372 (<0.75) (see run log) |
+| P0-M4 deploy spike 200/401 + leak checks all 404 | green | live URL `https://tascassignment.vercel.app` — see run log |
+| P0-M5 repo layout; old brief name only in the move table; .vercelignore + public/index.html | green | `grep -rn "CLAUDE_CODE_MASTER[_]BRIEF" .` lists only `docs/IMPLEMENTATION_PLAN.md:58` (the move table); tree matches D-46; `.vercelignore` and `public/index.html` exist |
+
+<!-- run log: paste pytest / profile_data / curl output here -->
+
+```
+$ pytest -q
+........                                                                 [100%]
+8 passed in 0.06s
+
+$ pytest -q -m live
+8 deselected in 0.03s
+(live skipped — 0 live-marked tests exist in Phase 0; core/llm.py, which will carry the "live" markers, does not exist until Phase 2)
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
+
+$ python scripts/profile_data.py
+PASS  cand_shape: got=(120, 11) expected=(120, 11)
+PASS  role_shape: got=(10, 8) expected=(10, 8)
+PASS  dup_raw: got=(23, 61) expected=(23, 61)
+PASS  dup_norm: got=(26, 69) expected=(26, 69)
+PASS  dup_norm_conflicting: got=22 expected=22
+PASS  pool_norm: got=77 expected=77
+PASS  experience_anomalies: got={'five years', '-2'} expected={'five years', '-2'}
+PASS  experience_empty: got=1 expected=1
+PASS  notice_formats: got=11 expected=11
+PASS  notice_empty: got=1 expected=1
+PASS  location_nospace_distinct: got=4 expected=4
+PASS  location_empty: got=1 expected=1
+PASS  countries: got={'UAE','Egypt','Saudi Arabia','Jordan','Lebanon','Qatar'} expected=same
+PASS  role_cities: got={'Dubai','Abu Dhabi','Riyadh','Cairo'} expected=same
+PASS  id_empty: got=1 expected=1
+PASS  dash_nulls: got={'certifications':44,'projects':66,'extra_curriculars':44} expected=same
+PASS  skills_empty: got={'C118','C112'} expected=same
+PASS  vocab: got=113 expected=113
+PASS  role_tokens_unique: got=52 expected=52
+PASS  unmatched: got=17 expected=17
+PASS  html_rows: got={'C120'} expected=same
+PASS  mojibake_rows: got={'C124'} expected=same
+PASS  reversed_edu: got=24 expected=24
+PASS  headline_contradictions: got={'C128'} expected=same
+
+$ python scripts/build_similarity_cache.py   (run once, local only, Python 3.12 + sentence-transformers)
+rest apis top-3: [('rest api design', 0.802), ('microservices', 0.389), ('node.js', 0.318)]
+python top-3: [('python', 1.0), ('django', 0.496), ('pandas', 0.465)]
+kafka top-3: [('jenkins', 0.372), ('kubernetes', 0.327), ('figma', 0.304)]
+
+$ vercel --prod   ->   Aliased  https://tascassignment.vercel.app
+
+$ curl -H "X-Access-Code: <redacted>" https://tascassignment.vercel.app/api/health
+{"ok": true, "model": "claude-sonnet-5", "data_loaded": true, "prompts_dir": true}
+HTTP_STATUS:200
+
+$ curl https://tascassignment.vercel.app/api/health   (no header)
+{"error": "unauthorized"}
+HTTP_STATUS:401
+
+$ curl -o /dev/null -w "%{http_code}" https://tascassignment.vercel.app/.env
+404
+$ curl -o /dev/null -w "%{http_code}" https://tascassignment.vercel.app/private/forbidden_terms.txt
+404
+$ curl -o /dev/null -w "%{http_code}" https://tascassignment.vercel.app/data/candidate_profiles.csv
+404
+$ curl -o /dev/null -w "%{http_code}" https://tascassignment.vercel.app/docs/MASTER_BRIEF.md
+404
+$ curl -o /dev/null -w "%{http_code}" https://tascassignment.vercel.app/api/_shared
+404
+```
+
+## Phase 1 — normalizer, policy guard, skills tiers 1–2, normalized data, labeling sheet
+status: pending · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P1-U1 parse_experience | pending | |
+| P1-U2 parse_notice ×12 | pending | |
+| P1-U3 parse_location | pending | |
+| P1-U4 clean_text (HTML/mojibake/dash) | pending | |
+| P1-U5 seniority ladder ×11 | pending | |
+| P1-U6 headline conflict C128 | pending | |
+| P1-U7 split_skills + canonical_value | pending | |
+| P1-U8 dups 26/69/22 + C106∈C014 + pool 77 | pending | |
+| P1-U9 strip {C118,C112} + C_UNKNOWN_1 | pending | |
+| P1-U10 skills tiers 1–2 | pending | |
+| P1-U11 Guard accepts legal ops | pending | |
+| P1-U12 Guard rejects banned ops | pending | |
+| P1-U13 post-renorm clamp | pending | |
+| P1-U14 weight invariant property | pending | |
+| P1-U15 validate_rubric | pending | |
+| P1-M1 normalized JSON committed; zero proxy_language flags | pending | |
+| P1-M2 labeling sheet handed over | pending | |
+
+## Phase 2 — rubric compiler + echo-back
+status: pending · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P2-U1 compiler → rubric | pending | |
+| P2-U2 rejection merge shape | pending | |
+| P2-U3 adjustments surfaced | pending | |
+| P2-U4 blank guidance, zero LLM calls | pending | |
+| P2-L1 16 benign fixtures compile | pending | |
+| P2-L2 6 intents → expected ops | pending | |
+| P2-L3 6 attacks rejected | pending | |
+| P2-M1 examples + readable echo-back | pending | |
+
+<!-- paste the fixture table: guidance → accepted ops → rejections -->
+
+## Phase 3 — scorer + cascade tier 3
+status: pending · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P3-U1 golden 0.8125 → 81 | pending | |
+| P3-U2 boost 86 / penalty 71 | pending | |
+| P3-U3 order invariance | pending | |
+| P3-U4 weights sum | pending | |
+| P3-U5 cascade exact/alias/semantic/none | pending | |
+| P3-U6 availability ×12 | pending | |
+| P3-U7 hard filters + unevaluable | pending | |
+| P3-U8 dup collapse | pending | |
+| P3-U9 insufficient strip | pending | |
+| P3-U10 boost once/stack/clip | pending | |
+| P3-U11 real-candidate decomposition | pending | |
+| P3-M1 R004 top-10 eyeball | pending | |
+
+<!-- paste the R004 default top-10: id, score, band -->
+
+## Phase 4 — analyst + critic + reranker
+status: pending · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P4-U1 happy path | pending | |
+| P4-U2 regeneration loop | pending | |
+| P4-U3 persistent overlap failure | pending | |
+| P4-U4 persistent non-overlap failure | pending | |
+| P4-U5 critic failure kinds | pending | |
+| P4-U6 critic on real dirt | pending | |
+| P4-U7 reranker advisory only | pending | |
+| P4-L1 prefix ≥ 1024 tokens | pending | |
+| P4-L2 groundedness (2 of 3 clean) | pending | run 1: · run 2: · run 3: |
+| P4-L3 cache_read > 0 (record the token counts — they feed the README cost note) | pending | |
+| P4-L4 attack 4 flagged, score unchanged | pending | |
+| P4-L5 reranker live shape | pending | |
+| P4-M1 prompt examples saved | pending | |
+
+## Phase 5 — API, auditor/export, frontend, deploy
+status: pending · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P5-U1 401 on all endpoints | pending | |
+| P5-U2 400 on tampered rubric | pending | |
+| P5-U3 endpoint shapes | pending | |
+| P5-U4 export golden file | pending | |
+| P5-L1 live end-to-end | pending | |
+| P5-M1 five PDF outputs in browser | pending | |
+| P5-M2 progressive render + cache badge | pending | |
+| P5-M3 deployed demo (stretch) | pending | |
+
+## Phase 6 — evaluation harness
+status: pending · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P6-U1 nDCG / recall | pending | |
+| P6-U2 four-fifths logic | pending | |
+| P6-U3 det τ == 1.0 | pending | |
+| P6-U4 steering hard asserts | pending | |
+| P6-U5 audit completeness | pending | |
+| P6-M2 injections 7/7 (run_evals §5) | pending | |
+| P6-M3 judge κ (run_evals §6) | pending | |
+| P6-M1 run_evals full report | pending | |
+
+## Phase 7 — deliverables
+status: pending · gate: pending
+
+| ID | Status | Evidence |
+|---|---|---|
+| P7-M1 README completeness | pending | |
+| P7-M2 prompts have examples | pending | |
+| P7-M3 all-roles sanity | pending | |
+| P7-M4 green build | pending | |
+| P7-M5 clean submission | pending | |
+| P7-M6 fresh-clone reproducibility | pending | |
+
+---
+
+## Eval snapshot (Phase 6 — paste verbatim from `python scripts/run_evals.py`)
+
+```
+§1 golden-set ranking quality   nDCG@10: … · Recall@10: … (per role + mean)
+§2 rank stability               deterministic τ: … · reranker disagreement overlap: …
+§3 groundedness                 last 3 runs: … (clean / not clean)
+§4 steering                     … / 5 asserts passed
+§5 injection suite              … / 7 blocked
+§6 judge agreement              κ = …  (n = …)
+§7 four-fifths                  (table, all 10 roles)
+§8 audit bundle                 … / … required keys present
+```

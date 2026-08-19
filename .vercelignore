@@ -1,0 +1,14 @@
+.env*
+private/
+docs/
+tests/
+scripts/
+*.pdf
+*.dmg
+.claude/
+venv/
+.venv/
+.venv-simcache/
+HOW-IT-WORKS.md
+__pycache__/
+.pytest_cache/
