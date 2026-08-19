@@ -147,7 +147,7 @@ wrote private/labeling_sheet.md and .csv for ['R004', 'R003']
 ```
 
 ## Phase 2 — rubric compiler + echo-back
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
