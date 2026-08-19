@@ -7,7 +7,7 @@ Test IDs and their expected results are defined in `TEST_PLAN.md`. This file rec
 ---
 
 ## Phase 0 — scaffold, data facts, aliases, similarity cache, style gate, deploy spike
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
