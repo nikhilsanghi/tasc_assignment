@@ -1,0 +1,72 @@
+{
+ "input": {
+  "role_id": "R004",
+  "candidate_id": "C037"
+ },
+ "output": {
+  "candidate_id": "unknown",
+  "overlaps": [
+   {
+    "requirement": "SQL",
+    "evidence": "SQL",
+    "source_field": "skills",
+    "tier": "exact"
+   },
+   {
+    "requirement": "Python/R",
+    "evidence": "Python",
+    "source_field": "skills",
+    "tier": "alias"
+   },
+   {
+    "requirement": "statistics",
+    "evidence": "Statistics",
+    "source_field": "skills",
+    "tier": "exact"
+   },
+   {
+    "requirement": "Tableau",
+    "evidence": "Tableau",
+    "source_field": "skills",
+    "tier": "exact"
+   },
+   {
+    "requirement": "A/B testing experience",
+    "evidence": "A/B testing",
+    "source_field": "skills",
+    "tier": "alias"
+   }
+  ],
+  "gaps": [
+   {
+    "requirement": "data visualization",
+    "severity": "required",
+    "note": "No explicit data visualization skill or tool listed beyond Tableau, which is scored separately as nice-to-have."
+   }
+  ],
+  "fit_brief": "The candidate shows strong coverage of core analytics requirements, with SQL, Python, and Statistics all directly evidenced in the skills list. The strongest overlap is the combination of SQL and Python, both central to the role's required skill set. The main gap is data visualization, which isn't explicitly listed as a distinct skill despite Tableau appearing under nice-to-have. Location is a mismatch since the candidate is based in Riyadh rather than Dubai, and the 60-day notice period may affect availability timelines.",
+  "clarifying_questions": [
+   {
+    "text": "Can you clarify your experience with data visualization tools or techniques beyond Tableau?",
+    "kind": "gap"
+   },
+   {
+    "text": "Would you consider highlighting specific dashboard or reporting visualization work in past roles?",
+    "kind": "gap"
+   },
+   {
+    "text": "Open to relocating to Dubai? Currently in Riyadh.",
+    "kind": "data"
+   }
+  ],
+  "data_flags": [],
+  "confidence": "medium"
+ },
+ "usage": {
+  "input_tokens": 844,
+  "output_tokens": 599,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 3067
+ },
+ "model": "claude-sonnet-5"
+}

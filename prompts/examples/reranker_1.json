@@ -1,0 +1,47 @@
+{
+ "input": {
+  "role_id": "R004",
+  "shortlist_ids": [
+   "C101",
+   "C037",
+   "C039",
+   "C038",
+   "C032",
+   "C035",
+   "C104",
+   "C033",
+   "C036",
+   "C002"
+  ]
+ },
+ "output": {
+  "disagreements": [],
+  "llm_order": [
+   "C101",
+   "C037",
+   "C039",
+   "C032",
+   "C038",
+   "C035",
+   "C104",
+   "C033",
+   "C036",
+   "C002"
+  ],
+  "missing_ids": [],
+  "usage": {
+   "input_tokens": 1384,
+   "output_tokens": 596,
+   "cache_creation_input_tokens": 1269,
+   "cache_read_input_tokens": 0
+  },
+  "prompt_hash": "7faf458fd583"
+ },
+ "usage": {
+  "input_tokens": 1384,
+  "output_tokens": 596,
+  "cache_creation_input_tokens": 1269,
+  "cache_read_input_tokens": 0
+ },
+ "model": "claude-sonnet-5"
+}

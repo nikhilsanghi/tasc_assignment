@@ -274,23 +274,55 @@ R008 Senior->1.0 should be 2.0). Fixed, data/roles_normalized.json regenerated, 
 ```
 
 ## Phase 4 — analyst + critic + reranker
-status: pending · gate: pending
+status: green · gate: pending
 
 | ID | Status | Evidence |
 |---|---|---|
-| P4-U1 happy path | pending | |
-| P4-U2 regeneration loop | pending | |
-| P4-U3 persistent overlap failure | pending | |
-| P4-U4 persistent non-overlap failure | pending | |
-| P4-U5 critic failure kinds | pending | |
-| P4-U6 critic on real dirt | pending | |
-| P4-U7 reranker advisory only | pending | |
-| P4-L1 prefix ≥ 1024 tokens | pending | |
-| P4-L2 groundedness (2 of 3 clean) | pending | run 1: · run 2: · run 3: |
-| P4-L3 cache_read > 0 (record the token counts — they feed the README cost note) | pending | |
-| P4-L4 attack 4 flagged, score unchanged | pending | |
-| P4-L5 reranker live shape | pending | |
-| P4-M1 prompt examples saved | pending | |
+| P4-U1 happy path | green | `test_analyst.py::test_passing_analysis_no_regeneration` PASS — 1 LLM call |
+| P4-U2 regeneration loop | green | `test_analyst.py::test_failing_then_passing_regenerates` PASS — `<critic_failures>` in 2nd user turn |
+| P4-U3 persistent overlap failure | green | `test_analyst.py::test_two_failing_drops_overlaps_and_flags` PASS — overlaps dropped, `ungrounded citation removed`, `confidence low`, `passed False` |
+| P4-U4 persistent non-overlap failure | green | `test_analyst.py::test_persistent_question_mix_failure_kept_unrepaired` PASS — output kept as-is, `critic_unresolved: question_mix`, `passed False` |
+| P4-U5 critic failure kinds | green | `test_critic.py` — all 6 kinds covered (`evidence_not_found`, `bad_requirement`, `bad_source_field`, `question_count`, `question_mix`, `superlative`) PASS |
+| P4-U6 critic on real dirt | green | `test_critic.py::test_html_source_passes_with_stripped_evidence`, `test_mojibake_source_passes_with_cleaned_evidence`, `test_promoted_non_role_skill_passes`, `test_null_field_always_fails` PASS |
+| P4-U7 reranker advisory only | green | `test_reranker.py` ×6 PASS — never mutates, only \|Δ\|≥2, unknown ids ignored, dup first-wins, missing_ids recorded |
+| P4-L1 prefix ≥ 1024 tokens | green | `test_live_phase4.py::test_prefix_tokens` PASS (real `count_tokens` call) |
+| P4-L2 groundedness (2 of 3 clean) | green | **3 of 3 consecutive runs clean** — 30/30 candidate-analyses passed grounding across 3 runs; see table below |
+| P4-L3 cache_read > 0 | green | `test_live_phase4.py::test_cache` PASS; representative call `cache_read_input_tokens: 3067` (see `prompts/examples/analyst_1.json`) |
+| P4-L4 attack 4 flagged, score unchanged | green | `test_live_phase4.py::test_attack4` PASS — `data_flags` contains an "embedded instruction" entry, `score_float` byte-identical to the untampered record |
+| P4-L5 reranker live shape | green | `test_live_phase4.py::test_reranker_live` PASS — valid shape, `llm_order ⊆` shortlist, `missing_ids` recorded, deterministic order untouched |
+| P4-M1 prompt examples saved | green | `prompts/examples/analyst_1.json`, `analyst_2.json`, `reranker_1.json` saved from real live calls |
+
+**Groundedness runs (D-35, `tests/golden/groundedness_runs.jsonl`), R004 default top-10, all 3 consecutive runs:**
+
+| run | timestamp (UTC) | clean | regenerated | notes |
+|---|---|---|---|---|
+| 1 | 2026-08-19T21:35:43Z | ✅ 10/10 | none | all first-call passes |
+| 2 | 2026-08-19T21:38:03Z | ✅ 10/10 | none | all first-call passes |
+| 3 | 2026-08-19T21:39:38Z | ✅ 10/10 | C101 (still passed) | regeneration loop exercised for real and succeeded |
+
+<!-- run log -->
+```
+$ pytest -q
+........................................................................ [ 62%]
+............................................                             [100%]
+116 passed, 30 deselected in 0.96s
+
+$ pytest -q -m live tests/test_live_phase4.py
+.....                                                                    [100%]
+5 passed in 132.36s
+
+$ pytest -q -m live -k groundedness   (rerun 2)
+1 passed in 75.64s
+
+$ pytest -q -m live -k groundedness   (rerun 3)
+1 passed in 85.67s
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
+```
 
 ## Phase 5 — API, auditor/export, frontend, deploy
 status: pending · gate: pending

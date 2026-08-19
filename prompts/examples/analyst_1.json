@@ -1,0 +1,78 @@
+{
+ "input": {
+  "role_id": "R004",
+  "candidate_id": "C101"
+ },
+ "output": {
+  "candidate_id": "C031",
+  "overlaps": [
+   {
+    "requirement": "SQL",
+    "evidence": "SQL",
+    "source_field": "skills",
+    "tier": "exact"
+   },
+   {
+    "requirement": "Python/R",
+    "evidence": "Python",
+    "source_field": "skills",
+    "tier": "alias"
+   },
+   {
+    "requirement": "statistics",
+    "evidence": "Statistics",
+    "source_field": "skills",
+    "tier": "exact"
+   },
+   {
+    "requirement": "Tableau",
+    "evidence": "Tableau",
+    "source_field": "skills",
+    "tier": "exact"
+   },
+   {
+    "requirement": "A/B testing experience",
+    "evidence": "A/B testing",
+    "source_field": "skills",
+    "tier": "alias"
+   }
+  ],
+  "gaps": [
+   {
+    "requirement": "data visualization",
+    "severity": "required",
+    "note": "No explicit mention of data visualization skill or tools beyond Tableau listed separately."
+   }
+  ],
+  "fit_brief": "The candidate shows strong coverage of required skills including SQL, Python, and statistics, plus both nice-to-have skills (Tableau, A/B testing). The main gap is explicit evidence of data visualization as a distinct skill, though Tableau use suggests some capability. Multiple duplicate conflicts were found across education, experience_years, location, notice_period, and past_roles fields, which undermines confidence in the profile's current accuracy. Given the location mismatch risk and unresolved data conflicts, further verification is recommended before proceeding.",
+  "clarifying_questions": [
+   {
+    "text": "Can you provide examples of data visualization tools or techniques used beyond Tableau to confirm this required skill?",
+    "kind": "gap"
+   },
+   {
+    "text": "Do you have formal or informal experience specifically labeled as data visualization work, distinct from dashboarding?",
+    "kind": "gap"
+   },
+   {
+    "text": "Profile conflict: location shows Cairo|Egypt vs Dubai|UAE - which is current?",
+    "kind": "data"
+   }
+  ],
+  "data_flags": [
+   "dup_conflict_education",
+   "dup_conflict_experience_years",
+   "dup_conflict_location",
+   "dup_conflict_notice_period",
+   "dup_conflict_past_roles"
+  ],
+  "confidence": "low"
+ },
+ "usage": {
+  "input_tokens": 1889,
+  "output_tokens": 677,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 3067
+ },
+ "model": "claude-sonnet-5"
+}
