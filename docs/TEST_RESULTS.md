@@ -325,18 +325,56 @@ PASS text (paths/emails/hours/forbidden terms)
 ```
 
 ## Phase 5 — API, auditor/export, frontend, deploy
-status: pending · gate: pending
+status: green · gate: pending
 
 | ID | Status | Evidence |
 |---|---|---|
-| P5-U1 401 on all endpoints | pending | |
-| P5-U2 400 on tampered rubric | pending | |
-| P5-U3 endpoint shapes | pending | |
-| P5-U4 export golden file | pending | |
-| P5-L1 live end-to-end | pending | |
-| P5-M1 five PDF outputs in browser | pending | |
-| P5-M2 progressive render + cache badge | pending | |
-| P5-M3 deployed demo (stretch) | pending | |
+| P5-U1 401 on all endpoints | green | `test_api.py::test_401_without_access_code` ×5 (all 6 endpoints — compile_rubric/score/analyze/rerank/export; health covered in Phase 0) PASS |
+| P5-U2 400 on tampered rubric | green | `test_api.py::test_400_bad_rubric_weight` PASS |
+| P5-U3 endpoint shapes | green | `test_api.py` — blank guidance→default zero-call, unknown role→404, score R004 shape, analyze/rerank/export shapes all PASS |
+| P5-U4 export golden file | green | `test_export_golden.py::test_export_matches_golden_file` PASS against reviewed `tests/golden/export_R004.md` |
+| P5-L1 live end-to-end | green | `test_e2e_live.py::test_e2e_live` PASS — compile→score→analyze(3)→rerank→export via real API; output saved to `tests/golden/export_R004_live.md` |
+| P5-M1 five PDF outputs in browser | green | all 5 confirmed live in the browser (see below): (1) ranked shortlist w/ scores (2) overlaps+gaps per candidate (3) fit brief (4) 3 clarifying questions (5) approve → Markdown rendered + downloadable |
+| P5-M2 progressive render + cache badge | green | first card (C101) rendered before the pool of 4 started; `cache hit` badge visible on subsequent cards (real `cache_read_input_tokens > 0`) |
+| P5-M3 deployed demo | green | **exceeds "stretch"** — full flow (compile → score → 10× analyze → rerank → export) completed successfully on `https://tascassignment.vercel.app`, not just non-fatal |
+
+**Manual browser walkthrough (R004, guidance `"prioritize immediate availability; A/B testing matters a lot"`), local dev server:**
+- Compile → clear plain-English interpretation, 4 ops accepted, no rejections.
+- Confirm & score → C101 rose to #1 (score 90, up from the default-rubric 82) reflecting the availability boost; table shows rank/id/headline/score/band pill/flags/dup badge; "Insufficient data" strip correctly lists `{C118, C112}`.
+- All 10 analyst cards rendered with evidence highlighted inline (yellow `<mark>`), overlaps/gaps/questions/flags/confidence, cache-hit badges on cards after the first.
+- Reranker fired a real disagreement: `C038: det #3 -> llm #7 — overqualified (8 yrs) and a very long 90-day notice, hurting the heavily weighted availability score`.
+- Approve & export → rendered Markdown (summary table + per-candidate sections + four-fifths note), both download buttons wired.
+
+**Live deployment walkthrough**, `https://tascassignment.vercel.app`: identical flow re-run against the real deployed serverless functions — all 10 `/api/analyze` calls, `/api/rerank`, and `/api/export` returned 200 with no console errors; leak checks (`/.env`, `/private/*`, `/data/*`, `/docs/*`, `/api/_shared`) still all 404.
+
+**Real bug found and fixed during manual testing (D-57):** `app.js`'s `api()` helper always attached a JSON body, even for the `GET /api/health` call — the browser's `fetch()` throws immediately on `GET` + body, which broke the role dropdown on first load. Mocked API tests never caught this since they call `dispatch()` directly in Python, bypassing `fetch()` entirely. Fixed by omitting `body` for GET/HEAD.
+
+<!-- run log -->
+```
+$ pytest -q
+........................................................................ [ 55%]
+.........................................................                [100%]
+129 passed, 31 deselected in 1.15s
+
+$ pytest -q -m live tests/test_e2e_live.py
+1 passed in 44.75s
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
+
+$ vercel build --yes   ->   6 functions built: health, compile_rubric, score, analyze, rerank, export
+$ vercel --prod        ->   Aliased  https://tascassignment.vercel.app
+
+$ curl -H "X-Access-Code: <redacted>" https://tascassignment.vercel.app/api/health
+{"ok": true, "model": "claude-sonnet-5", "data_loaded": true, "prompts_dir": true, "roles": [...10 roles...]}
+HTTP_STATUS:200
+
+$ leak checks (all 404): /.env  /private/forbidden_terms.txt  /data/candidate_profiles.csv
+                         /docs/MASTER_BRIEF.md  /api/_shared
+```
 
 ## Phase 6 — evaluation harness
 status: pending · gate: pending

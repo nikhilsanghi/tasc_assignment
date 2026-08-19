@@ -4,11 +4,17 @@ import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
+import functools
 import hmac
 import json
 import os
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler
+
+from core.llm import LLMOutputError, LLMRateLimited
+from core.paths import DATA
+from core.policy import load_policy
+from core.skills import load_aliases, load_similarity
 
 
 def check_access(headers: dict) -> bool:
@@ -33,13 +39,44 @@ def meta(usage: dict | None = None, prompt_hash: str | None = None) -> dict:
 
 
 def dispatch(handle, headers: dict, body: dict) -> tuple[int, dict]:
-    """D-50: LLMRateLimited->429 / LLMOutputError->502 map in once core/llm.py exists (Phase 2)."""
     if not check_access(headers):
         return 401, {"error": "unauthorized"}
     try:
         return handle(body, headers)
+    except LLMRateLimited as e:
+        return 429, {"error": "rate_limited", "retry_after": e.retry_after}
+    except LLMOutputError as e:
+        return 502, {"error": "llm_output", "detail": str(e)}
     except Exception as e:
         return 500, {"error": "internal", "detail": str(e)}
+
+
+@functools.lru_cache
+def load_data() -> dict:
+    roles = json.loads((DATA / "roles_normalized.json").read_text())
+    candidates = json.loads((DATA / "candidates_normalized.json").read_text())
+    by_id = {c["candidate_id"]: c for c in candidates}
+    vocab = set()
+    for c in candidates:
+        vocab.update(c["skills_norm"])
+    return {
+        "roles": roles, "roles_by_id": {r["role_id"]: r for r in roles},
+        "candidates": candidates, "by_id": by_id, "vocab": vocab,
+        "aliases": load_aliases(), "similarity": load_similarity(), "policy": load_policy(),
+    }
+
+
+def dup_rows_for(candidate_id: str) -> list[dict]:
+    data = load_data()
+    rec = data["by_id"].get(candidate_id)
+    if not rec:
+        return []
+    ids = set(rec.get("dup_members") or []) - {candidate_id}
+    return [data["by_id"][i] for i in ids if i in data["by_id"]]
+
+
+def get_role(role_id: str) -> dict | None:
+    return load_data()["roles_by_id"].get(role_id)
 
 
 class APIHandler(BaseHTTPRequestHandler):

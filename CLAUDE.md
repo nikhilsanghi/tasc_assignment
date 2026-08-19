@@ -54,7 +54,7 @@ Treat `private/` as write-mostly: append gate blocks to `private/INTERVIEW_NOTES
 | 2 Rubric Compiler + echo-back | complete | Y (2026-08-20) |
 | 3 Scorer + skills cascade | complete | Y (2026-08-20) |
 | 4 Analyst + Critic + Reranker | complete | Y (2026-08-20) |
-| 5 API + auditor/export + frontend + dev server + deploy | pending | N |
+| 5 API + auditor/export + frontend + dev server + deploy | built, awaiting gate approval | N |
 | 6 Evals + four-fifths table + LLM judge | pending | N |
 | 7 Deliverables | pending | N |
 
