@@ -377,7 +377,7 @@ $ leak checks (all 404): /.env  /private/forbidden_terms.txt  /data/candidate_pr
 ```
 
 ## Phase 6 — evaluation harness
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
