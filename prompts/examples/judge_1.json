@@ -1,0 +1,11 @@
+{
+ "input": {
+  "role_id": "R003",
+  "candidate_id": "C021"
+ },
+ "output": {
+  "grade": 1
+ },
+ "usage": null,
+ "model": "claude-sonnet-5"
+}
