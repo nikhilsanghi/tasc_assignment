@@ -1,0 +1,44 @@
+{
+ "input": {
+  "role_id": "R004",
+  "user_turn": "prioritize candidates available immediately"
+ },
+ "output": {
+  "weights": {
+   "required_skills": 0.3181818181818181,
+   "nice_to_have": 0.09090909090909091,
+   "experience_fit": 0.18181818181818182,
+   "seniority": 0.09090909090909091,
+   "location": 0.09090909090909091,
+   "availability": 0.22727272727272727
+  },
+  "hard_filters": [],
+  "skill_overrides": [],
+  "boosts": [
+   {
+    "concept": "immediate availability",
+    "fields": [
+     "headline"
+    ],
+    "match_terms": [
+     "immediately available",
+     "available immediately",
+     "immediate joiner",
+     "notice period: 0"
+    ],
+    "magnitude": 0.06
+   }
+  ],
+  "penalties": [],
+  "top_k": 10,
+  "interpretation": "Boosted candidates who signal immediate availability and increased the weight given to availability in scoring. No instructions were rejected.",
+  "hash": "d681a3fb9a83"
+ },
+ "usage": {
+  "input_tokens": 35,
+  "output_tokens": 406,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 5204
+ },
+ "model": "claude-sonnet-5"
+}

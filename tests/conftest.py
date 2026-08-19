@@ -58,3 +58,22 @@ def aliases() -> dict:
 @pytest.fixture
 def default_rubric() -> dict:
     return _default_rubric(10)
+
+
+@pytest.fixture
+def fake_llm(monkeypatch):
+    def _install(*outputs):
+        calls = []
+
+        def stub(system_blocks, user_text, schema, stage, model=None):
+            calls.append((system_blocks, user_text))
+            if len(calls) > len(outputs):
+                raise AssertionError("fake_llm called more times than outputs given")
+            usage = {"input_tokens": 10, "output_tokens": 10, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}
+            return outputs[len(calls) - 1], usage
+
+        monkeypatch.setattr("core.llm.call_structured", stub)
+        stub.calls = calls
+        return stub
+
+    return _install

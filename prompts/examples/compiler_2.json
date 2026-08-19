@@ -1,0 +1,48 @@
+{
+ "input": {
+  "role_id": "R004",
+  "user_turn": "we value client-facing experience over years of experience"
+ },
+ "output": {
+  "weights": {
+   "required_skills": 0.3804347826086957,
+   "nice_to_have": 0.10869565217391305,
+   "experience_fit": 0.13043478260869565,
+   "seniority": 0.10869565217391305,
+   "location": 0.10869565217391305,
+   "availability": 0.16304347826086957
+  },
+  "hard_filters": [],
+  "skill_overrides": [],
+  "boosts": [
+   {
+    "concept": "client-facing experience",
+    "fields": [
+     "skills",
+     "past_roles",
+     "projects",
+     "headline"
+    ],
+    "match_terms": [
+     "client",
+     "customer support",
+     "account management",
+     "client relationship building",
+     "stakeholder"
+    ],
+    "magnitude": 0.07
+   }
+  ],
+  "penalties": [],
+  "top_k": 10,
+  "interpretation": "We boosted candidates showing client-facing experience and reduced the weight on years-of-experience fit, reflecting the recruiter's stated trade-off. Specifically, a boost was added for terms like client, customer support, account management, and client relationship building across skills, past roles, projects, and headline fields, while the experience_fit dimension weight was lowered from 0.2 to 0.12 to de-emphasize raw tenure. No instructions were rejected.",
+  "hash": "27f16b220bf1"
+ },
+ "usage": {
+  "input_tokens": 37,
+  "output_tokens": 363,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 5204
+ },
+ "model": "claude-sonnet-5"
+}
