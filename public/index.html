@@ -7,72 +7,194 @@
 </head>
 <body>
 
+<!-- access-code gate -->
 <div id="access-overlay" class="overlay">
   <div class="overlay-box">
-    <h2>Access code</h2>
-    <input id="access-input" type="password" placeholder="Enter access code" autocomplete="off">
-    <button id="access-submit">Enter</button>
+    <div class="overlay-mark">MI</div>
+    <h2>Candidate-Role Match Intelligence</h2>
+    <p class="overlay-sub">A governed, steerable ranking copilot for in-house recruiters.</p>
+    <input id="access-input" type="password" placeholder="Access code" autocomplete="off">
+    <button id="access-submit" class="btn btn-primary btn-block">Enter</button>
     <p id="access-error" class="error-text"></p>
   </div>
 </div>
 
-<main id="app" class="hidden">
-  <h1>Candidate-Role Match Intelligence</h1>
-  <p class="subtitle">A governed, steerable ranking copilot for in-house recruiters.</p>
-  <div id="status-line" class="status-line hidden"></div>
+<div id="app" class="app hidden">
 
-  <section id="guidance-section" class="card">
-    <label for="role-select">Role</label>
-    <select id="role-select"></select>
-
-    <label for="guidance-input">Guidance (optional)</label>
-    <textarea id="guidance-input" rows="3" placeholder="e.g. prioritize candidates available immediately"></textarea>
-
-    <button id="compile-btn">Compile</button>
-  </section>
-
-  <section id="echo-section" class="card hidden">
-    <h2>What the system heard</h2>
-    <p id="interpretation-text"></p>
-    <div id="ops-list"></div>
-    <div id="adjustments-list"></div>
-    <div id="rejections-list"></div>
-    <button id="confirm-score-btn">Confirm &amp; score</button>
-  </section>
-
-  <section id="score-section" class="card hidden">
-    <h2>Ranked shortlist</h2>
-    <p id="filtered-out-line"></p>
-    <table id="score-table">
-      <thead><tr><th></th><th>#</th><th>ID</th><th>Headline</th><th>Score</th><th>Band</th><th>Flags</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div id="insufficient-strip" class="strip hidden">
-      <strong>Insufficient data — needs sourcing follow-up:</strong>
-      <span id="insufficient-ids"></span>
+  <!-- sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">MI</span>
+      <span class="brand-name">Match Intelligence</span>
     </div>
-  </section>
 
-  <section id="cards-section" class="card hidden">
-    <h2>Candidate analysis</h2>
-    <div id="analyst-cards"></div>
-  </section>
-
-  <section id="rerank-section" class="card hidden">
-    <h2>Reranker second opinion</h2>
-    <div id="rerank-disagreements"></div>
-  </section>
-
-  <section id="export-section" class="card hidden">
-    <button id="export-btn">Approve &amp; export</button>
-    <div id="export-output" class="hidden">
-      <div id="markdown-preview"></div>
-      <button id="download-md-btn">Download .md</button>
-      <button id="download-audit-btn">Download audit.json</button>
+    <div class="role-switcher-wrap">
+      <button id="role-switcher" class="role-switcher" type="button">
+        <span class="role-switcher-badge" aria-hidden="true">R</span>
+        <span class="role-switcher-title" id="role-switcher-title">Select role</span>
+        <svg class="icon icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div id="role-menu" class="role-menu hidden"></div>
     </div>
-  </section>
-</main>
 
-<script src="/app.js"></script>
+    <nav class="sidebar-nav">
+      <a href="#/overview" class="nav-item" data-view="overview">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+        <span>Overview</span>
+      </a>
+      <a href="#/sourcing" class="nav-item" data-view="sourcing">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Sourcing</span>
+      </a>
+      <a href="#/shortlist" class="nav-item" data-view="shortlist">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
+        <span>Shortlist</span>
+        <span class="nav-count" id="count-shortlist">0</span>
+      </a>
+      <a href="#/searches" class="nav-item" data-view="searches">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+        <span>Searches</span>
+        <span class="nav-count" id="count-searches">0</span>
+      </a>
+      <a href="#/outreach" class="nav-item" data-view="outreach">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+        <span>Outreach</span>
+        <span class="nav-chip">DEMO</span>
+      </a>
+      <a href="#/reports" class="nav-item" data-view="reports">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <div id="status-line" class="status-line hidden"></div>
+  </aside>
+
+  <!-- main content -->
+  <main class="content">
+
+    <!-- Overview: stats + recent updates, powered by localStorage history (§8, built in step 5) -->
+    <section id="view-overview" class="view hidden">
+      <header class="view-header"><h1>Overview</h1></header>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+        </div>
+        <h2>No searches yet</h2>
+        <p>Run your first search to see stats here.</p>
+        <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
+      </div>
+    </section>
+
+    <!-- Sourcing: guidance -> compile -> echo-back -> score -> analyst cards -> rerank -> export -->
+    <section id="view-sourcing" class="view">
+      <header class="view-header">
+        <h1 id="sourcing-role-title">Sourcing</h1>
+      </header>
+
+      <section id="guidance-section" class="card">
+        <label for="guidance-input">Guidance (optional)</label>
+        <textarea id="guidance-input" rows="3" placeholder="e.g. prioritize candidates available immediately"></textarea>
+        <button id="compile-btn" class="btn btn-primary">Compile</button>
+      </section>
+
+      <section id="echo-section" class="card hidden">
+        <h2>What the system heard</h2>
+        <p id="interpretation-text"></p>
+        <div id="ops-list"></div>
+        <div id="adjustments-list"></div>
+        <div id="rejections-list"></div>
+        <button id="confirm-score-btn" class="btn btn-primary">Confirm &amp; score</button>
+      </section>
+
+      <section id="score-section" class="card hidden">
+        <h2>Ranked shortlist</h2>
+        <p id="filtered-out-line"></p>
+        <table id="score-table">
+          <thead><tr><th></th><th>#</th><th>ID</th><th>Headline</th><th>Score</th><th>Band</th><th>Flags</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="insufficient-strip" class="strip hidden">
+          <strong>Insufficient data — needs sourcing follow-up:</strong>
+          <span id="insufficient-ids"></span>
+        </div>
+      </section>
+
+      <section id="cards-section" class="card hidden">
+        <h2>Candidate analysis</h2>
+        <div id="analyst-cards"></div>
+      </section>
+
+      <section id="rerank-section" class="card hidden">
+        <h2>Reranker second opinion</h2>
+        <div id="rerank-disagreements"></div>
+      </section>
+
+      <section id="export-section" class="card hidden">
+        <button id="export-btn" class="btn btn-primary">Approve &amp; export</button>
+        <div id="export-output" class="hidden">
+          <div id="markdown-preview"></div>
+          <button id="download-md-btn" class="btn btn-secondary">Download .md</button>
+          <button id="download-audit-btn" class="btn btn-secondary">Download audit.json</button>
+        </div>
+      </section>
+    </section>
+
+    <!-- Shortlist: candidates flagged from Sourcing, built in step 3 -->
+    <section id="view-shortlist" class="view hidden">
+      <header class="view-header"><h1>Shortlist</h1></header>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
+        </div>
+        <h2>No candidates shortlisted</h2>
+        <p>Shortlist candidates from Sourcing to review and approve them here.</p>
+        <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
+      </div>
+    </section>
+
+    <!-- Searches: auto-saved session history, built in step 4 -->
+    <section id="view-searches" class="view hidden">
+      <header class="view-header"><h1>Searches</h1></header>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+        </div>
+        <h2>No saved searches yet</h2>
+        <p>Every search you run is auto-saved here, with a downloadable trace.</p>
+        <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
+      </div>
+    </section>
+
+    <!-- Outreach: static, honest, non-functional demo, built in step 5 -->
+    <section id="view-outreach" class="view hidden">
+      <header class="view-header"><h1>Outreach</h1></header>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+        </div>
+        <h2>Outreach demo coming here</h2>
+        <p>A design demo of a sequence editor — nothing will be sent.</p>
+      </div>
+    </section>
+
+    <!-- Reports: session trace + approved-export downloads, built in step 4 -->
+    <section id="view-reports" class="view hidden">
+      <header class="view-header"><h1>Reports</h1></header>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+        </div>
+        <h2>No session traces yet</h2>
+        <p>Session traces and approved exports will be downloadable here.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/app.js" defer></script>
+<script src="/views.js" defer></script>
+<script src="/drawer.js" defer></script>
 </body>
 </html>

@@ -48,7 +48,7 @@ class Handler(BaseHTTPRequestHandler):
             self._api()
         elif self.path in ("/", "/index.html"):
             self._serve_static(PUBLIC / "index.html")
-        elif self.path in ("/app.js", "/styles.css"):
+        elif self.path in ("/app.js", "/views.js", "/drawer.js", "/extras.js", "/styles.css"):
             self._serve_static(PUBLIC / self.path.lstrip("/"))
         else:
             self.send_response(404)
