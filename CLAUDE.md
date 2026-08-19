@@ -57,6 +57,7 @@ Treat `private/` as write-mostly: append gate blocks to `private/INTERVIEW_NOTES
 | 5 API + auditor/export + frontend + dev server + deploy | complete | Y (2026-08-20) |
 | 6 Evals + four-fifths table + LLM judge | complete | Y (2026-08-20) |
 | 7 Deliverables | complete | Y (2026-08-20) |
+| 8 Product UI redesign (branch `ui-redesign`; scope/sequencing authority: `docs/UI_REDESIGN_PRD.md`) | in progress | N |
 
 ## Working files
 Decision log → `docs/DECISIONS.md` (read before architectural changes; append D-47+). Test IDs + exit criteria → `docs/TEST_PLAN.md`. Test evidence → `docs/TEST_RESULTS.md` (update at every gate). Prompts → `/prompts` (verbatim, with `/prompts/examples`). Interview/Loom notes → `private/INTERVIEW_NOTES.md` (append-only at gates). These lazy-load — do not paste them into context unless needed.
