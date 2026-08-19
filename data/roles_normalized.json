@@ -1,0 +1,320 @@
+[
+ {
+  "department": "Engineering",
+  "exp_max": 6,
+  "exp_min": 3,
+  "location": {
+   "city": "Dubai",
+   "country": "UAE"
+  },
+  "nice_norm": [
+   "kubernetes",
+   "kafka"
+  ],
+  "nice_to_have": [
+   "Kubernetes",
+   "Kafka"
+  ],
+  "required_norm": [
+   "python",
+   "rest apis",
+   "postgresql",
+   "aws"
+  ],
+  "required_skills": [
+   "Python",
+   "REST APIs",
+   "PostgreSQL",
+   "AWS"
+  ],
+  "role_id": "R001",
+  "seniority": "Mid",
+  "seniority_level": 1.0,
+  "title": "Backend Engineer"
+ },
+ {
+  "department": "Sales",
+  "exp_max": 3,
+  "exp_min": 1,
+  "location": {
+   "city": "Riyadh",
+   "country": "Saudi Arabia"
+  },
+  "nice_norm": [
+   "arabic fluency",
+   "saas sales experience"
+  ],
+  "nice_to_have": [
+   "Arabic fluency",
+   "SaaS sales experience"
+  ],
+  "required_norm": [
+   "b2b outreach",
+   "crm tools (salesforce/hubspot)",
+   "cold calling"
+  ],
+  "required_skills": [
+   "B2B outreach",
+   "CRM tools (Salesforce/HubSpot)",
+   "cold calling"
+  ],
+  "role_id": "R002",
+  "seniority": "Junior",
+  "seniority_level": 1.0,
+  "title": "Sales Development Representative"
+ },
+ {
+  "department": "Finance",
+  "exp_max": 10,
+  "exp_min": 6,
+  "location": {
+   "city": "Dubai",
+   "country": "UAE"
+  },
+  "nice_norm": [
+   "power bi",
+   "erp systems (sap/oracle)"
+  ],
+  "nice_to_have": [
+   "Power BI",
+   "ERP systems (SAP/Oracle)"
+  ],
+  "required_norm": [
+   "financial modeling",
+   "ifrs",
+   "budgeting",
+   "excel/advanced"
+  ],
+  "required_skills": [
+   "Financial modeling",
+   "IFRS",
+   "budgeting",
+   "Excel/advanced"
+  ],
+  "role_id": "R003",
+  "seniority": "Senior",
+  "seniority_level": 2.0,
+  "title": "Finance Manager"
+ },
+ {
+  "department": "Analytics",
+  "exp_max": 4,
+  "exp_min": 2,
+  "location": {
+   "city": "Dubai",
+   "country": "UAE"
+  },
+  "nice_norm": [
+   "tableau",
+   "a/b testing experience"
+  ],
+  "nice_to_have": [
+   "Tableau",
+   "A/B testing experience"
+  ],
+  "required_norm": [
+   "sql",
+   "python/r",
+   "data visualization",
+   "statistics"
+  ],
+  "required_skills": [
+   "SQL",
+   "Python/R",
+   "data visualization",
+   "statistics"
+  ],
+  "role_id": "R004",
+  "seniority": "Mid",
+  "seniority_level": 1.0,
+  "title": "Data Analyst"
+ },
+ {
+  "department": "HR",
+  "exp_max": 8,
+  "exp_min": 5,
+  "location": {
+   "city": "Abu Dhabi",
+   "country": "UAE"
+  },
+  "nice_norm": [
+   "arabic fluency",
+   "hris systems (workday/sap successfactors)"
+  ],
+  "nice_to_have": [
+   "Arabic fluency",
+   "HRIS systems (Workday/SAP SuccessFactors)"
+  ],
+  "required_norm": [
+   "employee relations",
+   "uae labor law",
+   "performance management"
+  ],
+  "required_skills": [
+   "Employee relations",
+   "UAE labor law",
+   "performance management"
+  ],
+  "role_id": "R005",
+  "seniority": "Senior",
+  "seniority_level": 2.0,
+  "title": "HR Business Partner"
+ },
+ {
+  "department": "Marketing",
+  "exp_max": 7,
+  "exp_min": 4,
+  "location": {
+   "city": "Dubai",
+   "country": "UAE"
+  },
+  "nice_norm": [
+   "b2b saas experience",
+   "figma"
+  ],
+  "nice_to_have": [
+   "B2B SaaS experience",
+   "Figma"
+  ],
+  "required_norm": [
+   "go-to-market strategy",
+   "positioning",
+   "content creation"
+  ],
+  "required_skills": [
+   "Go-to-market strategy",
+   "positioning",
+   "content creation"
+  ],
+  "role_id": "R006",
+  "seniority": "Mid-Senior",
+  "seniority_level": 2.0,
+  "title": "Product Marketing Manager"
+ },
+ {
+  "department": "Customer Success",
+  "exp_max": 3,
+  "exp_min": 1,
+  "location": {
+   "city": "Cairo",
+   "country": "Egypt"
+  },
+  "nice_norm": [
+   "arabic + english bilingual",
+   "saas product experience"
+  ],
+  "nice_to_have": [
+   "Arabic + English bilingual",
+   "SaaS product experience"
+  ],
+  "required_norm": [
+   "ticketing systems (zendesk)",
+   "troubleshooting",
+   "written communication"
+  ],
+  "required_skills": [
+   "Ticketing systems (Zendesk)",
+   "troubleshooting",
+   "written communication"
+  ],
+  "role_id": "R007",
+  "seniority": "Junior",
+  "seniority_level": 1.0,
+  "title": "Customer Support Specialist"
+ },
+ {
+  "department": "Engineering",
+  "exp_max": 7,
+  "exp_min": 4,
+  "location": {
+   "city": "Riyadh",
+   "country": "Saudi Arabia"
+  },
+  "nice_norm": [
+   "terraform",
+   "monitoring tools (datadog/prometheus)"
+  ],
+  "nice_to_have": [
+   "Terraform",
+   "monitoring tools (Datadog/Prometheus)"
+  ],
+  "required_norm": [
+   "ci/cd pipelines",
+   "docker",
+   "kubernetes",
+   "aws/azure"
+  ],
+  "required_skills": [
+   "CI/CD pipelines",
+   "Docker",
+   "Kubernetes",
+   "AWS/Azure"
+  ],
+  "role_id": "R008",
+  "seniority": "Senior",
+  "seniority_level": 1.0,
+  "title": "DevOps Engineer"
+ },
+ {
+  "department": "HR",
+  "exp_max": 5,
+  "exp_min": 2,
+  "location": {
+   "city": "Dubai",
+   "country": "UAE"
+  },
+  "nice_norm": [
+   "tech hiring experience",
+   "linkedin recruiter"
+  ],
+  "nice_to_have": [
+   "Tech hiring experience",
+   "LinkedIn Recruiter"
+  ],
+  "required_norm": [
+   "full-cycle recruiting",
+   "ats tools",
+   "sourcing"
+  ],
+  "required_skills": [
+   "Full-cycle recruiting",
+   "ATS tools",
+   "sourcing"
+  ],
+  "role_id": "R009",
+  "seniority": "Mid",
+  "seniority_level": 1.0,
+  "title": "Technical Recruiter"
+ },
+ {
+  "department": "Legal",
+  "exp_max": 9,
+  "exp_min": 5,
+  "location": {
+   "city": "Abu Dhabi",
+   "country": "UAE"
+  },
+  "nice_norm": [
+   "gcc cross-border experience",
+   "bilingual arabic/english"
+  ],
+  "nice_to_have": [
+   "GCC cross-border experience",
+   "bilingual Arabic/English"
+  ],
+  "required_norm": [
+   "contract drafting",
+   "uae commercial law",
+   "compliance"
+  ],
+  "required_skills": [
+   "Contract drafting",
+   "UAE commercial law",
+   "compliance"
+  ],
+  "role_id": "R010",
+  "seniority": "Senior",
+  "seniority_level": 2.0,
+  "title": "Legal Counsel"
+ }
+]

@@ -91,27 +91,60 @@ $ curl -o /dev/null -w "%{http_code}" https://tascassignment.vercel.app/api/_sha
 ```
 
 ## Phase 1 — normalizer, policy guard, skills tiers 1–2, normalized data, labeling sheet
-status: pending · gate: pending
+status: green · gate: pending
 
 | ID | Status | Evidence |
 |---|---|---|
-| P1-U1 parse_experience | pending | |
-| P1-U2 parse_notice ×12 | pending | |
-| P1-U3 parse_location | pending | |
-| P1-U4 clean_text (HTML/mojibake/dash) | pending | |
-| P1-U5 seniority ladder ×11 | pending | |
-| P1-U6 headline conflict C128 | pending | |
-| P1-U7 split_skills + canonical_value | pending | |
-| P1-U8 dups 26/69/22 + C106∈C014 + pool 77 | pending | |
-| P1-U9 strip {C118,C112} + C_UNKNOWN_1 | pending | |
-| P1-U10 skills tiers 1–2 | pending | |
-| P1-U11 Guard accepts legal ops | pending | |
-| P1-U12 Guard rejects banned ops | pending | |
-| P1-U13 post-renorm clamp | pending | |
-| P1-U14 weight invariant property | pending | |
-| P1-U15 validate_rubric | pending | |
-| P1-M1 normalized JSON committed; zero proxy_language flags | pending | |
-| P1-M2 labeling sheet handed over | pending | |
+| P1-U1 parse_experience | green | `test_normalizer.py::test_parse_experience` ×5 PASS |
+| P1-U2 parse_notice ×12 | green | `test_normalizer.py::test_parse_notice` ×12 PASS |
+| P1-U3 parse_location | green | `test_normalizer.py::test_parse_location(_empty)` ×6 PASS |
+| P1-U4 clean_text (HTML/mojibake/dash) | green | `test_normalizer.py::test_clean_text_*` ×3 PASS |
+| P1-U5 seniority ladder ×11 | green | `test_normalizer.py::test_seniority_level` ×11 PASS (caught + fixed a real bug: `\bsr\.\b` can never match — D-54) |
+| P1-U6 headline conflict C128 | green | `test_normalizer.py::test_headline_experience_claim`, `test_headline_field_contradiction_on_real_data` PASS |
+| P1-U7 split_skills + canonical_value | green | `test_normalizer.py::test_split_skills_dedupe_preserves_order`, `test_canonical_value_location_comma_space_equivalence` PASS |
+| P1-U8 dups 26/69/22 + C106∈C014 + pool 77 | green | `test_dups.py` ×3 PASS on real normalized data |
+| P1-U9 strip {C118,C112} + C_UNKNOWN_1 | green | `test_dups.py::test_insufficient_data_set`, `test_exactly_one_unknown_id` PASS |
+| P1-U10 skills tiers 1–2 | green | `test_skills.py` ×6 PASS |
+| P1-U11 Guard accepts legal ops | green | `test_policy.py::test_guard_accepts_one_valid_instance_of_each_op`, `test_two_reweights_applied_as_one_batch`, `test_default_rubric_has_hash_and_interpretation` PASS |
+| P1-U12 Guard rejects banned ops | green | `test_policy.py::test_guard_rejects_banned_ops` ×8 PASS |
+| P1-U13 post-renorm clamp | green | `test_policy.py::test_post_renorm_clamp` PASS |
+| P1-U14 weight invariant property | green | `test_policy.py::test_weight_invariant_property` (50 random op sets) PASS |
+| P1-U15 validate_rubric | green | `test_policy.py::test_validate_rubric` PASS |
+| P1-M1 normalized JSON committed; zero proxy_language flags | green | `data/candidates_normalized.json` (120), `data/roles_normalized.json` (10) committed; see run log |
+| P1-M2 labeling sheet handed over | green | `private/labeling_sheet.md` + `.csv` written, 2 roles × 12 candidates (8 top-overlap + 4 random) |
+
+<!-- run log -->
+```
+$ pytest -q
+........................................................................ [ 97%]
+..                                                                       [100%]
+74 passed in 0.12s
+
+$ pytest -q -m live
+74 deselected in 0.05s
+(live skipped — no live-marked tests exist yet; core/llm.py is Phase 2)
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
+
+$ python core/normalizer.py
+wrote 120 candidates, 10 roles
+
+$ python -c "... P1-M1 spot checks ..."
+C120 flags: ['dup_conflict_certifications', 'dup_conflict_education', 'dup_conflict_experience_years',
+             'dup_conflict_location', 'dup_conflict_notice_period', 'dup_conflict_past_roles',
+             'education_years_reversed', 'html_markup']
+C124 flags: ['encoding_artifact']
+C106 dup_group_id: G11 == C014: G11 (True)
+C118 data_quality: 0.1
+proxy_language rows: [] (zero, as expected — D-47)
+
+$ python scripts/make_labeling_sheet.py
+wrote private/labeling_sheet.md and .csv for ['R004', 'R003']
+```
 
 ## Phase 2 — rubric compiler + echo-back
 status: pending · gate: pending

@@ -50,7 +50,7 @@ Treat `private/` as write-mostly: append gate blocks to `private/INTERVIEW_NOTES
 | Phase | Status | Gate approved by Owner |
 |---|---|---|
 | 0 Scaffold, data facts, aliases, similarity cache, style check, deploy spike | complete | Y (2026-08-20) |
-| 1 Normalizer + Policy Guard + skills tiers 1–2 + labeling sheet | pending | N |
+| 1 Normalizer + Policy Guard + skills tiers 1–2 + labeling sheet | built, awaiting gate approval | N |
 | 2 Rubric Compiler + echo-back | pending | N |
 | 3 Scorer + skills cascade | pending | N |
 | 4 Analyst + Critic + Reranker | pending | N |
