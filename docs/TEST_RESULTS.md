@@ -325,7 +325,7 @@ PASS text (paths/emails/hours/forbidden terms)
 ```
 
 ## Phase 5 — API, auditor/export, frontend, deploy
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
