@@ -393,7 +393,7 @@ status: green · gate: approved 2026-08-20
 **Note on P6-M2 wording:** `TEST_PLAN.md` describes this as "7/7 attacks from `fixtures_guidance.ATTACKS`," but that list holds the 6 compiler-level attacks by design (D-2's Phase 2 split) — attack 4 (the profile-injection case) is structurally a different mechanism (analyst/critic, not the compiler) and is tested separately in the same section, matching the plan's own `run_evals.py` step description ("(5) injection 7/7 ... imports `ATTACKS`" — 6 from the list + attack 4 handled inline). Total is still the full 7-attack canned suite from brief §7.1e.
 
 ## Phase 7 — deliverables
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
