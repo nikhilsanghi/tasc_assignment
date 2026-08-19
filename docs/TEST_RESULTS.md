@@ -274,7 +274,7 @@ R008 Senior->1.0 should be 2.0). Fixed, data/roles_normalized.json regenerated, 
 ```
 
 ## Phase 4 — analyst + critic + reranker
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
