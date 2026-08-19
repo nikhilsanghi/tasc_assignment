@@ -52,7 +52,7 @@ Treat `private/` as write-mostly: append gate blocks to `private/INTERVIEW_NOTES
 | 0 Scaffold, data facts, aliases, similarity cache, style check, deploy spike | complete | Y (2026-08-20) |
 | 1 Normalizer + Policy Guard + skills tiers 1–2 + labeling sheet | complete | Y (2026-08-20) |
 | 2 Rubric Compiler + echo-back | complete | Y (2026-08-20) |
-| 3 Scorer + skills cascade | built, awaiting gate approval | N |
+| 3 Scorer + skills cascade | complete | Y (2026-08-20) |
 | 4 Analyst + Critic + Reranker | pending | N |
 | 5 API + auditor/export + frontend + dev server + deploy | pending | N |
 | 6 Evals + four-fifths table + LLM judge | pending | N |

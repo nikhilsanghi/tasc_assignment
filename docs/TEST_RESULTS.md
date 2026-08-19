@@ -221,7 +221,7 @@ assertion of this is P4-L3, not required this phase).
 ```
 
 ## Phase 3 — scorer + cascade tier 3
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
