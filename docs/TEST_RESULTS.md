@@ -91,7 +91,7 @@ $ curl -o /dev/null -w "%{http_code}" https://tascassignment.vercel.app/api/_sha
 ```
 
 ## Phase 1 — normalizer, policy guard, skills tiers 1–2, normalized data, labeling sheet
-status: green · gate: pending
+status: green · gate: approved 2026-08-20
 
 | ID | Status | Evidence |
 |---|---|---|
