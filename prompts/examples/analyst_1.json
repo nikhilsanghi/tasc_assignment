@@ -41,17 +41,17 @@
    {
     "requirement": "data visualization",
     "severity": "required",
-    "note": "No explicit mention of data visualization skill or tools beyond Tableau listed separately."
+    "note": "No explicit data visualization skill listed beyond Tableau usage, which is not itself the listed requirement token."
    }
   ],
-  "fit_brief": "The candidate shows strong coverage of required skills including SQL, Python, and statistics, plus both nice-to-have skills (Tableau, A/B testing). The main gap is explicit evidence of data visualization as a distinct skill, though Tableau use suggests some capability. Multiple duplicate conflicts were found across education, experience_years, location, notice_period, and past_roles fields, which undermines confidence in the profile's current accuracy. Given the location mismatch risk and unresolved data conflicts, further verification is recommended before proceeding.",
+  "fit_brief": "This candidate shows solid coverage of the core analytics stack, with SQL, Python, and Statistics all evidenced directly in the skills list, plus both nice-to-have skills (Tableau, A/B testing). The main gap is explicit evidence of data visualization as a distinct requirement, though Tableau use suggests some overlap. There are multiple duplicate-record conflicts across education, experience years, location, notice period, and past roles that should be resolved before proceeding, since the profile data is inconsistent between records. Given the current record, the candidate is based in Cairo, Egypt, which is distant from the Dubai role location.",
   "clarifying_questions": [
    {
-    "text": "Can you provide examples of data visualization tools or techniques used beyond Tableau to confirm this required skill?",
+    "text": "Can you provide examples of data visualization tools or deliverables (dashboards, charts) you've built to confirm this requirement?",
     "kind": "gap"
    },
    {
-    "text": "Do you have formal or informal experience specifically labeled as data visualization work, distinct from dashboarding?",
+    "text": "Could you clarify your specific experience with data visualization tools beyond Tableau, if any?",
     "kind": "gap"
    },
    {
@@ -69,10 +69,10 @@
   "confidence": "low"
  },
  "usage": {
-  "input_tokens": 1889,
-  "output_tokens": 677,
-  "cache_creation_input_tokens": 0,
-  "cache_read_input_tokens": 3067
+  "input_tokens": 1858,
+  "output_tokens": 742,
+  "cache_creation_input_tokens": 3067,
+  "cache_read_input_tokens": 0
  },
  "model": "claude-sonnet-5"
 }

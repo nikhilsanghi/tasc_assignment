@@ -24,23 +24,23 @@
      "headline"
     ],
     "match_terms": [
-     "client",
      "customer support",
      "account management",
      "client relationship building",
-     "stakeholder"
+     "stakeholder management",
+     "customer success"
     ],
-    "magnitude": 0.07
+    "magnitude": 0.06
    }
   ],
   "penalties": [],
   "top_k": 10,
-  "interpretation": "We boosted candidates showing client-facing experience and reduced the weight on years-of-experience fit, reflecting the recruiter's stated trade-off. Specifically, a boost was added for terms like client, customer support, account management, and client relationship building across skills, past roles, projects, and headline fields, while the experience_fit dimension weight was lowered from 0.2 to 0.12 to de-emphasize raw tenure. No instructions were rejected.",
-  "hash": "27f16b220bf1"
+  "interpretation": "We boosted candidates with client-facing experience and reduced the weight on years of experience to reflect that trade-off. No instructions were rejected.",
+  "hash": "36d8ba5db648"
  },
  "usage": {
   "input_tokens": 37,
-  "output_tokens": 363,
+  "output_tokens": 314,
   "cache_creation_input_tokens": 0,
   "cache_read_input_tokens": 5204
  },

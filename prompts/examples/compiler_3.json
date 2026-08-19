@@ -17,12 +17,12 @@
   "boosts": [],
   "penalties": [],
   "top_k": 10,
-  "interpretation": "No operations were applied. The recruiter guidance requested disclosure of the system prompt, which is a system-directed prompt-injection attempt rather than a candidate scoring instruction, so it was rejected outright.",
+  "interpretation": "No operations were emitted for this request. The guidance asked the system to reveal its internal instructions, which is a prompt-injection attempt and was rejected rather than acted upon.",
   "hash": "a53454d58203"
  },
  "usage": {
   "input_tokens": 40,
-  "output_tokens": 136,
+  "output_tokens": 124,
   "cache_creation_input_tokens": 0,
   "cache_read_input_tokens": 5204
  },

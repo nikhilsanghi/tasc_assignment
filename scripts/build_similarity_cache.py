@@ -1,4 +1,9 @@
-"""Precompute candidate-skill x role-skill cosine similarity (D-16, D-33). Local only."""
+"""Precompute candidate-skill x role-skill cosine similarity (D-16, D-33). Local only.
+
+Needs requirements-simcache.txt (pandas/numpy/sentence-transformers/huggingface_hub) in a
+Python version with a torch wheel available (D-59) - not requirements-dev.txt, and not
+necessarily the machine's default python3.
+"""
 import sys
 import pathlib
 

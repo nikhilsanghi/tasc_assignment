@@ -18,25 +18,26 @@
    {
     "concept": "immediate availability",
     "fields": [
-     "headline"
+     "headline",
+     "extra_curriculars"
     ],
     "match_terms": [
      "immediately available",
-     "available immediately",
      "immediate joiner",
-     "notice period: 0"
+     "available immediately",
+     "no notice period"
     ],
-    "magnitude": 0.06
+    "magnitude": 0.08
    }
   ],
   "penalties": [],
   "top_k": 10,
-  "interpretation": "Boosted candidates who signal immediate availability and increased the weight given to availability in scoring. No instructions were rejected.",
-  "hash": "d681a3fb9a83"
+  "interpretation": "Boosted candidates who signal immediate availability and increased the weight of the availability dimension so they rank higher overall. No instructions were rejected.",
+  "hash": "19554483b45c"
  },
  "usage": {
   "input_tokens": 35,
-  "output_tokens": 406,
+  "output_tokens": 285,
   "cache_creation_input_tokens": 0,
   "cache_read_input_tokens": 5204
  },

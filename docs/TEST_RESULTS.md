@@ -393,16 +393,16 @@ status: green · gate: approved 2026-08-20
 **Note on P6-M2 wording:** `TEST_PLAN.md` describes this as "7/7 attacks from `fixtures_guidance.ATTACKS`," but that list holds the 6 compiler-level attacks by design (D-2's Phase 2 split) — attack 4 (the profile-injection case) is structurally a different mechanism (analyst/critic, not the compiler) and is tested separately in the same section, matching the plan's own `run_evals.py` step description ("(5) injection 7/7 ... imports `ATTACKS`" — 6 from the list + attack 4 handled inline). Total is still the full 7-attack canned suite from brief §7.1e.
 
 ## Phase 7 — deliverables
-status: pending · gate: pending
+status: green · gate: pending
 
 | ID | Status | Evidence |
 |---|---|---|
-| P7-M1 README completeness | pending | |
-| P7-M2 prompts have examples | pending | |
-| P7-M3 all-roles sanity | pending | |
-| P7-M4 green build | pending | |
-| P7-M5 clean submission | pending | |
-| P7-M6 fresh-clone reproducibility | pending | |
+| P7-M1 README completeness | green | `README.md` written in brief §10's exact section order — problem+product brief, **Matching logic** (weights table, six subscore paragraphs, 3-tier cascade with the `REST APIs ↔ REST API design` example, golden worked example 81/86/71, how guidance changes it), quickstart, architecture (stage table + both `docs/MASTER_BRIEF.md` §4.6 diagrams verbatim), measured data findings, controls, evaluation results (Phase-6 snapshot pasted verbatim), eval-at-scale answer, scale path (D-15 thresholds), compliance stub (EU AI Act, NYC LL144, EEOC four-fifths, intended use, data governance, oversight, logging), assumptions & known limits (all 5 required items present), recruiter workflow fit |
+| P7-M2 prompts have examples | green | `prompts/README.md` written (what each prompt does, its live-verified hash, where it's called); all 4 prompts confirmed with ≥1 real example: `compiler_{1,2,3}.json`, `analyst_{1,2}.json`, `reranker_1.json`, `judge_1.json` in `prompts/examples/` |
+| P7-M3 all-roles sanity | green | `score_all` run for all 10 roles under the default rubric (pool=75, insufficient_data=2 consistently, every role's top-5 topically matched) and both demo guidance strings compiled+scored live against all 10 roles (20 live compiler calls, 0 rejections, 0 adjustments) — every top-5 across all 30 role×guidance combinations plausible; the two near-identical-headline pairs spotted during the eyeball (e.g. C106/C016) checked by hand and confirmed to be genuinely distinct candidates (different skills/employers/location), not a missed-duplicate bug — see `docs/DECISIONS.md` reasoning inline in this gate's notes |
+| P7-M4 green build | green | `pytest -q` → 136 passed, 0 failed · `pytest -q -m live` → 31 passed, 0 failed (315s) · `python scripts/check_style.py` → all 4 checks PASS |
+| P7-M5 clean submission | green | `check_style.py`'s text check (paths/emails/hours/forbidden terms) PASS over all shipped files including the new `README.md`, `prompts/README.md` |
+| P7-M6 fresh-clone reproducibility | green | **Found and fixed a real break, not assumed clean:** `git clone --local` to a scratch dir + `pip install -r requirements-dev.txt` failed with `ResolutionImpossible` on the machine's default Python 3.14 — `sentence-transformers` requires `torch`, which has no 3.14 wheel, the same incompatibility Gate 0 worked around for the one-time similarity-cache build but never fixed in the requirements files themselves. Root-caused: nothing in `core/`, `api/`, `scripts/profile_data.py`, `scripts/dev_server.py`, or the test suite imports those 4 packages — only the already-run, local-only `build_similarity_cache.py` does. Fixed by splitting them into a new `requirements-simcache.txt` (D-59); `requirements-dev.txt` is now just `-r requirements.txt` + `pytest`. Re-tested against a fresh clone with the fix: `pip install -r requirements-dev.txt` succeeds, `pytest -q` → 136 passed, `python scripts/profile_data.py` → all facts PASS, `python scripts/check_style.py` → all green, `python scripts/dev_server.py` → `GET /api/health` returns 401 with no header / 200 with `X-Access-Code` / `GET /` returns 200 — end-to-end with zero undocumented steps beyond the README's own quickstart |
 
 ---
 

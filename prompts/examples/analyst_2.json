@@ -41,22 +41,22 @@
    {
     "requirement": "data visualization",
     "severity": "required",
-    "note": "No explicit data visualization skill or tool listed beyond Tableau, which is scored separately as nice-to-have."
+    "note": "No explicit mention of data visualization tools or experience beyond Tableau in skills list."
    }
   ],
-  "fit_brief": "The candidate shows strong coverage of core analytics requirements, with SQL, Python, and Statistics all directly evidenced in the skills list. The strongest overlap is the combination of SQL and Python, both central to the role's required skill set. The main gap is data visualization, which isn't explicitly listed as a distinct skill despite Tableau appearing under nice-to-have. Location is a mismatch since the candidate is based in Riyadh rather than Dubai, and the 60-day notice period may affect availability timelines.",
+  "fit_brief": "The candidate shows strong alignment on core required skills, with verbatim evidence of SQL, Python, and Statistics, plus both nice-to-have skills Tableau and A/B testing. The main gap is data visualization, which is not explicitly listed despite Tableau proficiency suggesting some overlap. Location is a mismatch since the candidate is based in Riyadh rather than Dubai, and the 60-day notice period may affect availability. Overall this is a viable candidate with a few gaps to clarify.",
   "clarifying_questions": [
-   {
-    "text": "Can you clarify your experience with data visualization tools or techniques beyond Tableau?",
-    "kind": "gap"
-   },
-   {
-    "text": "Would you consider highlighting specific dashboard or reporting visualization work in past roles?",
-    "kind": "gap"
-   },
    {
     "text": "Open to relocating to Dubai? Currently in Riyadh.",
     "kind": "data"
+   },
+   {
+    "text": "Can you describe your experience with data visualization tools or dashboards beyond Tableau?",
+    "kind": "gap"
+   },
+   {
+    "text": "Do you have hands-on experience building visual reports or dashboards for stakeholders?",
+    "kind": "gap"
    }
   ],
   "data_flags": [],
@@ -64,7 +64,7 @@
  },
  "usage": {
   "input_tokens": 844,
-  "output_tokens": 599,
+  "output_tokens": 587,
   "cache_creation_input_tokens": 0,
   "cache_read_input_tokens": 3067
  },

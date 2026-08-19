@@ -17,8 +17,8 @@
  "output": {
   "disagreements": [],
   "llm_order": [
-   "C101",
    "C037",
+   "C101",
    "C039",
    "C032",
    "C038",
@@ -31,7 +31,7 @@
   "missing_ids": [],
   "usage": {
    "input_tokens": 1384,
-   "output_tokens": 596,
+   "output_tokens": 590,
    "cache_creation_input_tokens": 1269,
    "cache_read_input_tokens": 0
   },
@@ -39,7 +39,7 @@
  },
  "usage": {
   "input_tokens": 1384,
-  "output_tokens": 596,
+  "output_tokens": 590,
   "cache_creation_input_tokens": 1269,
   "cache_read_input_tokens": 0
  },

@@ -17,10 +17,10 @@ Treat `private/` as write-mostly: append gate blocks to `private/INTERVIEW_NOTES
 - After each phase's gate is approved, invoke the `explain-the-build` skill (per the Owner's global instructions); its `HOW-IT-WORKS.md` lives in `private/`.
 
 ## Commands
-- `pip install -r requirements-dev.txt` — dev deps (runtime deps are the subset in `requirements.txt`)
+- `pip install -r requirements-dev.txt` — dev deps (runtime deps are the subset in `requirements.txt`); this is everything needed to run tests and the dev server
 - `pytest -q` — all unit tests, LLM mocked · `pytest -q -m live` — live LLM smoke tests (needs `ANTHROPIC_API_KEY`; skipped otherwise)
 - `python scripts/profile_data.py` — recompute and PASS/FAIL the brief §5 data facts
-- `python scripts/build_similarity_cache.py` — regenerate `data/skill_similarity.json` (local only; needs sentence-transformers)
+- `python scripts/build_similarity_cache.py` — regenerate `data/skill_similarity.json` (local only, one-time; needs `pip install -r requirements-simcache.txt` in a Python version with a torch wheel available — not the machine's default python3 necessarily, D-59)
 - `python scripts/make_labeling_sheet.py` — write the Owner's golden-set labeling sheet
 - `python scripts/run_evals.py` — consolidated eval report (Phase 6)
 - `python scripts/check_style.py` — concision + forbidden-deps + forbidden-terms checks (must be green at every gate)
