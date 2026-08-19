@@ -11,7 +11,7 @@ import unicodedata
 
 from core.paths import DATA
 from core.normalizer_tables import (
-    WORD_NUMBERS, COUNTRY_ALIASES, ROLE_CITY_COUNTRY, SENIORITY_LADDER,
+    WORD_NUMBERS, COUNTRY_ALIASES, ROLE_CITY_COUNTRY, ROLE_SENIORITY_LEVEL, SENIORITY_LADDER,
     HTML_TAG_RE, ENCODING_ARTIFACT_RE, NON_ID_FIELDS,
 )
 
@@ -146,7 +146,7 @@ def normalize_roles(raw_roles: list[dict]) -> list[dict]:
             "required_skills": required, "nice_to_have": nice,
             "required_norm": norm_tokens(required), "nice_norm": norm_tokens(nice),
             "exp_min": exp_min, "exp_max": exp_max,
-            "seniority": row["seniority"], "seniority_level": seniority_level(row["title"], None),
+            "seniority": row["seniority"], "seniority_level": ROLE_SENIORITY_LEVEL[row["seniority"]],
             "location": {"city": city, "country": ROLE_CITY_COUNTRY.get(city)},
         })
     return out

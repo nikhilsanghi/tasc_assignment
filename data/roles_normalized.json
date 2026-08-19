@@ -60,7 +60,7 @@
   ],
   "role_id": "R002",
   "seniority": "Junior",
-  "seniority_level": 1.0,
+  "seniority_level": 0.0,
   "title": "Sales Development Representative"
  },
  {
@@ -188,7 +188,7 @@
   ],
   "role_id": "R006",
   "seniority": "Mid-Senior",
-  "seniority_level": 2.0,
+  "seniority_level": 1.5,
   "title": "Product Marketing Manager"
  },
  {
@@ -219,7 +219,7 @@
   ],
   "role_id": "R007",
   "seniority": "Junior",
-  "seniority_level": 1.0,
+  "seniority_level": 0.0,
   "title": "Customer Support Specialist"
  },
  {
@@ -252,7 +252,7 @@
   ],
   "role_id": "R008",
   "seniority": "Senior",
-  "seniority_level": 1.0,
+  "seniority_level": 2.0,
   "title": "DevOps Engineer"
  },
  {

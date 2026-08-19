@@ -13,6 +13,7 @@ COUNTRY_ALIASES = {
     "egypt": "Egypt", "jordan": "Jordan", "lebanon": "Lebanon", "qatar": "Qatar",
 }
 ROLE_CITY_COUNTRY = {"Dubai": "UAE", "Abu Dhabi": "UAE", "Riyadh": "Saudi Arabia", "Cairo": "Egypt"}
+ROLE_SENIORITY_LEVEL = {"Junior": 0.0, "Mid": 1.0, "Mid-Senior": 1.5, "Senior": 2.0}
 _LADDER_KEYWORDS = [
     (["manager", "head", "director", "principal", "vp", "vice president", "chief",
       "controller", "counsel", "partner", "architect"], 2.0),

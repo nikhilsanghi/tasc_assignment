@@ -10,7 +10,7 @@ import pytest
 
 from core.paths import DATA, load_dotenv
 from core.policy import default_rubric as _default_rubric, load_policy as _load_policy
-from core.skills import load_aliases as _load_aliases
+from core.skills import load_aliases as _load_aliases, load_similarity as _load_similarity
 
 load_dotenv()
 os.environ.setdefault("ACCESS_CODE", "test-code")
@@ -53,6 +53,11 @@ def policy() -> dict:
 @pytest.fixture
 def aliases() -> dict:
     return _load_aliases()
+
+
+@pytest.fixture
+def similarity() -> dict:
+    return _load_similarity()
 
 
 @pytest.fixture

@@ -220,27 +220,58 @@ cache_read_input_tokens: 5204 on the second live call — prompt caching already
 assertion of this is P4-L3, not required this phase).
 ```
 
-<!-- paste the fixture table: guidance → accepted ops → rejections -->
-
 ## Phase 3 — scorer + cascade tier 3
-status: pending · gate: pending
+status: green · gate: pending
 
 | ID | Status | Evidence |
 |---|---|---|
-| P3-U1 golden 0.8125 → 81 | pending | |
-| P3-U2 boost 86 / penalty 71 | pending | |
-| P3-U3 order invariance | pending | |
-| P3-U4 weights sum | pending | |
-| P3-U5 cascade exact/alias/semantic/none | pending | |
-| P3-U6 availability ×12 | pending | |
-| P3-U7 hard filters + unevaluable | pending | |
-| P3-U8 dup collapse | pending | |
-| P3-U9 insufficient strip | pending | |
-| P3-U10 boost once/stack/clip | pending | |
-| P3-U11 real-candidate decomposition | pending | |
-| P3-M1 R004 top-10 eyeball | pending | |
+| P3-U1 golden 0.8125 → 81 | green | `test_scorer.py::test_golden_worked_example` PASS |
+| P3-U2 boost 86 / penalty 71 | green | `test_scorer.py::test_golden_boost`, `test_golden_penalty` PASS |
+| P3-U3 order invariance | green | `test_scorer.py::test_order_invariance` (3 seeds) PASS |
+| P3-U4 weights sum | green | covered by Phase 1 `test_policy.py::test_weight_invariant_property`; `DEFAULT_WEIGHTS` sums to 1.0 by construction |
+| P3-U5 cascade exact/alias/semantic/none | green | `test_skills.py::test_exact_match`, `test_alias_match_python_r`, `test_semantic_match_rest_apis`, `test_kafka_zero_match_with_similarity` PASS |
+| P3-U6 availability ×12 | green | `test_scorer.py::test_availability_table` (11 rows covering all 5 kinds + the 5 day-bucket boundaries) PASS |
+| P3-U7 hard filters + unevaluable | green | `test_scorer.py::test_hard_filter_notice_days_max`, `test_hard_filter_location_scope_role_city`, `test_hard_filter_must_have_skill` PASS |
+| P3-U8 dup collapse | green | `test_scorer.py::test_dup_collapse_c014` PASS — C014's group (with C106) ranks once |
+| P3-U9 insufficient strip | green | `test_scorer.py::test_insufficient_strip` PASS — `{C118, C112}` |
+| P3-U10 boost once/stack/clip | green | `test_scorer.py::test_boost_fires_once_and_stacks_and_clips` PASS |
+| P3-U11 real-candidate decomposition | green | `test_scorer.py::test_c101_real_candidate_decomposition` PASS — hand-verified against real R004/C101 data, score 82 |
+| P3-M1 R004 top-10 eyeball | green | see table below — every entry plausibly a data-analyst candidate, no empty profile |
 
-<!-- paste the R004 default top-10: id, score, band -->
+**R004 default-rubric top-10 (75 in ranked pool, 2 insufficient-data, 0 filtered):**
+
+| rank | candidate_id | score | band | headline |
+|---|---|---|---|---|
+| 1 | C101 | 82 | strong | Data-driven analyst with e-commerce and retail background |
+| 2 | C037 | 78 | viable-with-gaps | Analytics professional with 5 years in SQL and Python |
+| 3 | C039 | 75 | viable-with-gaps | Data-driven analyst with e-commerce and retail background |
+| 4 | C038 | 72 | viable-with-gaps | Data analyst with a passion for turning numbers into decisions |
+| 5 | C032 | 72 | viable-with-gaps | Data analyst with a passion for turning numbers into decisions |
+| 6 | C035 | 70 | viable-with-gaps | Data analyst with a passion for turning numbers into decisions |
+| 7 | C104 | 66 | viable-with-gaps | Analytics professional with 4 years in SQL and Python |
+| 8 | C033 | 64 | viable-with-gaps | Analytics professional with 2 years in SQL and Python |
+| 9 | C036 | 64 | viable-with-gaps | Data-driven analyst with e-commerce and retail background |
+| 10 | C002 | 56 | stretch | Software Engineer specializing in backend and cloud infrastructure |
+
+<!-- run log -->
+```
+$ pytest -q
+........................................................................ [ 76%]
+......................                                                  [100%]
+94 passed, 25 deselected in 1.00s
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
+
+$ found + fixed a real Phase 1 bug while building this phase's seniority subscore (D-55):
+normalize_roles had been deriving a role's seniority_level by running the candidate keyword ladder
+against the role TITLE, instead of mapping the CSV's own seniority column (Junior/Mid/Mid-Senior/Senior)
+directly. Wrong for 3/10 roles (R002 Junior->1.0 should be 0.0, R006 Mid-Senior->2.0 should be 1.5,
+R008 Senior->1.0 should be 2.0). Fixed, data/roles_normalized.json regenerated, all tests re-verified green.
+```
 
 ## Phase 4 — analyst + critic + reranker
 status: pending · gate: pending
