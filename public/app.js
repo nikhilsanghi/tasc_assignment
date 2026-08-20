@@ -154,6 +154,7 @@ MI.router = {
     if (view === "searches") MI.extras.renderSearches();
     if (view === "reports") MI.extras.renderReports();
     if (view === "overview") MI.extras.renderOverview();
+    if (view === "outreach") MI.extras.renderOutreach();
   },
 };
 
@@ -233,6 +234,7 @@ async function boot() {
   MI.drawer.wire();
   MI.extras.wireSearches();
   MI.extras.wireReports();
+  MI.extras.wireOutreach();
   MI.storage.updateSearchesCount();
   MI.router.init();
 }

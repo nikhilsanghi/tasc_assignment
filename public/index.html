@@ -73,16 +73,23 @@
   <!-- main content -->
   <main class="content">
 
-    <!-- Overview: stats + recent updates, powered by localStorage history (§8, built in step 5) -->
+    <!-- Overview: stats + recent updates, powered by localStorage history -->
     <section id="view-overview" class="view hidden">
       <header class="view-header"><h1>Overview</h1></header>
-      <div class="empty-state">
+      <div id="overview-empty" class="empty-state">
         <div class="empty-state-icon">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
         </div>
         <h2>No searches yet</h2>
         <p>Run your first search to see stats here.</p>
         <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
+      </div>
+      <div id="overview-content" class="hidden">
+        <div id="overview-stats" class="stat-grid"></div>
+        <div class="card">
+          <span class="section-label">Recent updates</span>
+          <div id="overview-recent"></div>
+        </div>
       </div>
     </section>
 
@@ -189,15 +196,47 @@
       <div id="searches-detail" class="hidden"></div>
     </section>
 
-    <!-- Outreach: static, honest, non-functional demo, built in step 5 -->
+    <!-- Outreach: static, honest, non-functional demo -->
     <section id="view-outreach" class="view hidden">
       <header class="view-header"><h1>Outreach</h1></header>
-      <div class="empty-state">
+      <div class="outreach-banner">Outreach is a design demo — nothing is sent and no email accounts are connected.</div>
+
+      <div id="outreach-empty" class="empty-state">
         <div class="empty-state-icon">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
         </div>
-        <h2>Outreach demo coming here</h2>
-        <p>A design demo of a sequence editor — nothing will be sent.</p>
+        <h2>No candidates shortlisted</h2>
+        <p>Shortlist a candidate from Sourcing to preview an outreach sequence for them.</p>
+        <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
+      </div>
+
+      <div id="outreach-content" class="outreach-layout hidden">
+        <div class="outreach-steps">
+          <span class="section-label">Outreach sequence</span>
+          <div class="outreach-step-row active" data-step="1"><span>New Email</span><span class="day">Day 1</span></div>
+          <div class="outreach-step-row" data-step="2"><span>Reply to Email</span><span class="day">Day 4</span></div>
+          <div class="outreach-step-row" data-step="3"><span>Reply to Email</span><span class="day">Day 8</span></div>
+
+          <span class="section-label" style="display:block; margin-top:1.25rem;">After candidate replies</span>
+          <div class="outreach-branch">👍 Candidate is interested</div>
+          <div class="outreach-branch">👎 Candidate is not interested</div>
+          <div class="outreach-branch">💤 Candidate stops responding</div>
+
+          <span class="section-label" style="display:block; margin-top:1.25rem;">Add step</span>
+          <div id="outreach-add-step-menu"></div>
+        </div>
+
+        <div class="outreach-preview">
+          <div class="card">
+            <span class="section-label">Send emails</span>
+            <p class="text-muted" style="margin:.35rem 0 0;">Connect your email account to send emails. <span class="no-accounts">No accounts connected</span></p>
+          </div>
+          <div class="card">
+            <span class="section-label">Candidate preview</span>
+            <select id="outreach-candidate-select" style="margin-top:.5rem;"></select>
+          </div>
+          <div id="outreach-step-card" class="card"></div>
+        </div>
       </div>
     </section>
 

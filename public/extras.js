@@ -159,6 +159,95 @@ MI.extras.wireReports = function wireReports() {
   });
 };
 
-/* ---------- Overview (full stats in step 5) ---------- */
+/* ---------- Overview ---------- */
 
-MI.extras.renderOverview = function renderOverview() {};
+MI.extras.renderOverview = function renderOverview() {
+  const sessions = MI.storage.listSessions();
+  MI.el("overview-empty").classList.toggle("hidden", sessions.length > 0);
+  MI.el("overview-content").classList.toggle("hidden", sessions.length === 0);
+  if (!sessions.length) return;
+  const candidatesAnalyzed = sessions.reduce((sum, s) => sum + Object.keys(s.analyses || {}).length, 0);
+  const exportsMade = sessions.filter((s) => s.status === "exported").length;
+  let cacheTokens = "—";
+  for (const s of sessions) {
+    const vals = Object.values(s.analyses || {});
+    if (!vals.length) continue;
+    const last = vals[vals.length - 1];
+    if (last.meta && last.meta.usage && last.meta.usage.cache_read_input_tokens != null) cacheTokens = last.meta.usage.cache_read_input_tokens;
+    break;
+  }
+  MI.el("overview-stats").innerHTML = [
+    ["Searches run", sessions.length], ["Candidates analyzed", candidatesAnalyzed],
+    ["Exports made", exportsMade], ["Cache-read tokens (last analyze)", cacheTokens],
+  ].map(([label, n]) => `<div class="stat-card"><span class="n">${n}</span><span class="label">${label}</span></div>`).join("");
+  MI.el("overview-recent").innerHTML = sessions.slice(0, 5).map((s) => `
+    <div class="recent-row"><span>${s.role_title} — ${s.guidance ? s.guidance.slice(0, 50) : "default rubric"}</span>${statusPill(s.status)}</div>`).join("");
+};
+
+/* ---------- Outreach demo (static, no LLM/network call) ---------- */
+
+const OUTREACH_STEPS = [
+  { id: 1, label: "New Email", day: "Day 1", body: "Hi {{candidate_id}}, I'm reaching out about the {{role_title}} opportunity — your experience with {{top_overlap}} stood out. Do you have time for a quick call this week?" },
+  { id: 2, label: "Send Email Reply", day: "Day 4", body: "Hi {{candidate_id}}, just following up on the {{role_title}} role. Your background in {{top_overlap}} looks like a strong match. Any interest in chatting?" },
+  { id: 3, label: "Send Email Reply", day: "Day 8", body: "Hi {{candidate_id}}, I'll keep this brief — the {{role_title}} role is still open, and your {{top_overlap}} experience would be a strong fit. Let me know if the timing works." },
+];
+
+const ADD_STEP_OPTIONS = ["New Email Reply", "New Email Thread", "LinkedIn Message", "Connection Request", "Send Text Message", "Cold Call / Voicemail", "Custom Task"];
+
+function outreachTopOverlap(entry, analysis) {
+  const overlap = analysis && analysis.analysis.overlaps[0];
+  if (overlap) return overlap.requirement;
+  const hit = entry.subscores.required_skills.evidence[0] || entry.subscores.nice_to_have.evidence[0];
+  return hit ? hit.skill : "your background";
+}
+
+function fillTemplate(template, tokens) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => `<span class="chip chip-semantic">${tokens[key]}</span>`);
+}
+
+MI.extras.renderAddStepMenu = function renderAddStepMenu() {
+  MI.el("outreach-add-step-menu").innerHTML = ADD_STEP_OPTIONS.map((o) =>
+    `<div class="outreach-add-step" title="Not in scope — integration point">${o}</div>`).join("");
+};
+
+MI.extras.renderStepCard = function renderStepCard(stepId) {
+  const step = OUTREACH_STEPS.find((s) => s.id === stepId);
+  const candidateId = MI.el("outreach-candidate-select").value;
+  const entry = MI.state.scoreResult.ranked.find((e) => e.candidate_id === candidateId);
+  const roleTitle = MI.state.roles.find((r) => r.role_id === MI.state.roleId).title;
+  const tokens = { candidate_id: entry.candidate_id, role_title: roleTitle, top_overlap: outreachTopOverlap(entry, MI.state.analyses[candidateId]) };
+  MI.el("outreach-step-card").innerHTML = `
+    <span class="section-label">Step ${step.id}: ${step.label}</span>
+    <p style="margin:.75rem 0 0; font-size:13px;"><strong style="display:inline-block;width:60px;">From</strong> <span class="no-accounts">No accounts connected</span></p>
+    <p style="margin:.5rem 0 0; font-size:13px;"><strong style="display:inline-block;width:60px;">Subject</strong> ${roleTitle} opportunity</p>
+    <p style="margin:.5rem 0 0; font-size:13px; display:flex; align-items:center; gap:.6rem;">
+      <strong style="width:60px;">Type</strong>
+      <span class="write-toggle"><span class="active">Written by AI</span><span>Manual Email</span></span>
+    </p>
+    <div class="outreach-body">${fillTemplate(step.body, tokens)}</div>`;
+};
+
+MI.extras.renderOutreach = function renderOutreach() {
+  const ranked = (MI.state.scoreResult && MI.state.scoreResult.ranked) || [];
+  const shortlisted = ranked.filter((e) => MI.state.shortlistIds.has(e.candidate_id));
+  MI.el("outreach-empty").classList.toggle("hidden", shortlisted.length > 0);
+  MI.el("outreach-content").classList.toggle("hidden", shortlisted.length === 0);
+  if (!shortlisted.length) return;
+  MI.el("outreach-candidate-select").innerHTML = shortlisted.map((e) => `<option value="${e.candidate_id}">${e.candidate_id} — ${e.headline || ""}</option>`).join("");
+  MI.extras.renderAddStepMenu();
+  document.querySelectorAll(".outreach-step-row").forEach((r) => r.classList.remove("active"));
+  document.querySelector('.outreach-step-row[data-step="1"]').classList.add("active");
+  MI.extras.renderStepCard(1);
+};
+
+MI.extras.wireOutreach = function wireOutreach() {
+  MI.el("outreach-candidate-select").addEventListener("change", () => {
+    const active = document.querySelector(".outreach-step-row.active");
+    MI.extras.renderStepCard(Number(active.dataset.step));
+  });
+  document.querySelectorAll(".outreach-step-row").forEach((row) => row.addEventListener("click", () => {
+    document.querySelectorAll(".outreach-step-row").forEach((r) => r.classList.remove("active"));
+    row.classList.add("active");
+    MI.extras.renderStepCard(Number(row.dataset.step));
+  }));
+};
