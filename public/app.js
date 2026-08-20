@@ -142,6 +142,7 @@ async function boot() {
   MI.el("compile-btn").addEventListener("click", () => MI.views.onCompile());
   MI.el("confirm-score-btn").addEventListener("click", () => MI.views.onConfirmScore());
   MI.el("export-btn").addEventListener("click", () => MI.drawer.onExport());
+  MI.views.wireCriteriaBar();
   MI.router.init();
 }
 

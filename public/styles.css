@@ -209,6 +209,93 @@ th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(-
 }
 .md-row { font-family: ui-monospace, monospace; font-size: 12.5px; white-space: pre; overflow-x: auto; }
 
+/* ---------- criteria bar ---------- */
+.criteria-bar {
+  display: flex; align-items: flex-start; gap: .65rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-l);
+  padding: .7rem .9rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-s); max-width: 900px;
+}
+.criteria-icon { color: var(--violet); flex: none; margin-top: .35rem; }
+.criteria-bar-main { flex: 1; min-width: 0; }
+.criteria-input {
+  border: none; padding: .4rem 0; resize: vertical; box-shadow: none; min-height: 2rem;
+}
+.criteria-input:focus { outline: none; }
+.criteria-summary { display: none; align-items: center; gap: .6rem; padding: .4rem 0; }
+.criteria-summary-text { color: var(--text); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill-link { border: none; cursor: pointer; color: var(--violet); background: var(--violet-bg); font-weight: 600; }
+.btn-icon {
+  flex: none; background: none; border: 1px solid transparent; border-radius: var(--radius-s);
+  color: var(--text-2); padding: .4rem; cursor: pointer; display: flex;
+}
+.btn-icon:hover { background: var(--bg); color: var(--text); }
+.btn-sm { padding: .4rem .8rem; font-size: 13px; flex: none; }
+.criteria-bar:not(.editing) .criteria-input, .criteria-bar:not(.editing) #compile-btn { display: none; }
+.criteria-bar.editing .criteria-summary, .criteria-bar.editing #criteria-edit-btn { display: none; }
+.criteria-bar:not(.editing) .criteria-summary { display: flex; }
+
+/* ---------- sourcing sub-header ---------- */
+.view-subheader { display: flex; align-items: baseline; gap: .75rem; margin: 1.5rem 0 .75rem; max-width: 900px; }
+.view-subheader h2 { margin: 0; font-size: 15px; }
+.text-muted { color: var(--text-3); font-size: 12.5px; }
+
+/* ---------- candidate list / cards ---------- */
+.candidate-list { display: flex; flex-direction: column; gap: .85rem; max-width: 900px; }
+.candidate-card {
+  position: relative; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-m); padding: 1.1rem 1.25rem 1.1rem 3rem; box-shadow: var(--shadow-s);
+}
+.card-checkbox { position: absolute; top: 1.2rem; left: 1.1rem; width: 16px; height: 16px; }
+.candidate-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.candidate-identity { display: flex; gap: .7rem; min-width: 0; }
+.candidate-avatar {
+  width: 40px; height: 40px; border-radius: var(--radius-s); flex: none;
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700;
+}
+.candidate-title { font-weight: 600; font-size: 14px; }
+.candidate-location { color: var(--text-2); font-size: 12.5px; margin-top: 2px; }
+.candidate-actions { display: flex; align-items: center; gap: .5rem; flex: none; }
+
+.card-flags { display: flex; flex-wrap: wrap; gap: .3rem; margin: .6rem 0 0 0; }
+.card-flags .pill { background: var(--amber-bg); color: var(--amber); font-size: 11px; margin: 0; }
+.dup-badge { background: var(--red-bg); color: var(--red); }
+
+.card-section { margin-top: 1rem; }
+.card-section .section-label { display: block; margin-bottom: .5rem; }
+
+.subscore-row { display: flex; align-items: center; gap: .6rem; padding: .2rem 0; font-size: 12.5px; }
+.subscore-label { width: 118px; flex: none; color: var(--text-2); }
+.subscore-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.subscore-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.subscore-value { width: 36px; flex: none; text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.subscore-flag { color: var(--amber); flex: none; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: .4rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .55rem;
+  border-radius: 999px; font-size: 12px; border: 1px solid var(--border-2); background: var(--surface); color: var(--text-2);
+}
+.chip-exact { border-color: #bbf0cd; background: var(--green-bg); color: var(--green); }
+.chip-alias { border-color: #bfdbfe; background: var(--accent-bg); color: var(--accent); }
+.chip-semantic { border-color: #ddd6fe; background: var(--violet-bg); color: var(--violet); }
+
+.profile-row { display: flex; flex-wrap: wrap; gap: 1.25rem; font-size: 12.5px; color: var(--text-2); }
+.profile-row strong { color: var(--text); font-weight: 600; }
+
+/* ---------- skeletons (candidate + analyst) ---------- */
+.skeleton-card { border: 1px solid var(--border); border-radius: var(--radius-m); padding: 1.1rem 1.25rem; margin-bottom: .85rem; max-width: 900px; }
+.skeleton-line { height: 12px; margin-bottom: .5rem; }
+.skeleton-line.w-40 { width: 40%; }
+.skeleton-line.w-60 { width: 60%; }
+.skeleton-line.w-90 { width: 90%; }
+
+/* ---------- reranker disagreement badge ---------- */
+.rerank-badge {
+  display: block; background: var(--violet-bg); color: var(--violet); border-radius: var(--radius-s);
+  padding: .55rem .75rem; font-size: 12.5px; margin-bottom: .5rem;
+}
+.rerank-badge strong { color: var(--violet); }
+
 /* ---------- access overlay ---------- */
 .overlay {
   position: fixed; inset: 0; background: rgba(17, 24, 39, .6);

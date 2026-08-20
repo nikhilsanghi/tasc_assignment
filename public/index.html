@@ -92,28 +92,36 @@
         <h1 id="sourcing-role-title">Sourcing</h1>
       </header>
 
-      <section id="guidance-section" class="card">
-        <label for="guidance-input">Guidance (optional)</label>
-        <textarea id="guidance-input" rows="3" placeholder="e.g. prioritize candidates available immediately"></textarea>
-        <button id="compile-btn" class="btn btn-primary">Compile</button>
-      </section>
+      <div class="criteria-bar editing" id="criteria-bar">
+        <svg class="icon criteria-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.8L20 9.5l-6.2 1.7L12 17l-1.8-5.8L4 9.5l6.2-1.7z"/></svg>
+        <div class="criteria-bar-main">
+          <textarea id="guidance-input" class="criteria-input" rows="1" placeholder="Add guidance for this search — e.g. prioritize immediate availability; A/B testing matters a lot"></textarea>
+          <div class="criteria-summary">
+            <span class="criteria-summary-text" id="criteria-summary-text"></span>
+            <button type="button" class="pill pill-link" id="criteria-count-pill"></button>
+          </div>
+        </div>
+        <button id="compile-btn" class="btn btn-primary btn-sm">Compile</button>
+        <button id="criteria-edit-btn" class="btn-icon hidden" type="button" aria-label="Edit guidance">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+      </div>
 
       <section id="echo-section" class="card hidden">
-        <h2>What the system heard</h2>
+        <span class="section-label">What the system heard</span>
         <p id="interpretation-text"></p>
-        <div id="ops-list"></div>
+        <div id="ops-list" class="chip-row"></div>
         <div id="adjustments-list"></div>
         <div id="rejections-list"></div>
         <button id="confirm-score-btn" class="btn btn-primary">Confirm &amp; score</button>
       </section>
 
-      <section id="score-section" class="card hidden">
-        <h2>Ranked shortlist</h2>
-        <p id="filtered-out-line"></p>
-        <table id="score-table">
-          <thead><tr><th></th><th>#</th><th>ID</th><th>Headline</th><th>Score</th><th>Band</th><th>Flags</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <section id="score-section" class="hidden">
+        <div class="view-subheader">
+          <h2>Ranked shortlist</h2>
+          <span id="filtered-out-line" class="text-muted"></span>
+        </div>
+        <div id="candidate-list" class="candidate-list"></div>
         <div id="insufficient-strip" class="strip hidden">
           <strong>Insufficient data — needs sourcing follow-up:</strong>
           <span id="insufficient-ids"></span>
@@ -121,12 +129,12 @@
       </section>
 
       <section id="cards-section" class="card hidden">
-        <h2>Candidate analysis</h2>
+        <span class="section-label">Candidate analysis</span>
         <div id="analyst-cards"></div>
       </section>
 
       <section id="rerank-section" class="card hidden">
-        <h2>Reranker second opinion</h2>
+        <span class="section-label">Reranker second opinion</span>
         <div id="rerank-disagreements"></div>
       </section>
 
