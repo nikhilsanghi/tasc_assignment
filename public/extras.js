@@ -21,6 +21,82 @@ function relativeTime(iso) {
   return `${Math.round(hours / 24)}d ago`;
 }
 
+/* ---------- Shortlist (role-scoped: every role keeps its own) ---------- */
+
+MI.extras.currentShortlistRoleId = null;
+
+MI.extras.wireShortlistRoleSwitcher = function wireShortlistRoleSwitcher() {
+  MI.el("shortlist-role-switcher").addEventListener("click", () => MI.el("shortlist-role-menu").classList.toggle("hidden"));
+  MI.el("shortlist-role-menu").addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".role-menu-item");
+    if (btn) MI.extras.selectShortlistRole(btn.dataset.roleId);
+  });
+  document.addEventListener("click", (ev) => {
+    if (!ev.target.closest("#shortlist-role-switcher") && !ev.target.closest("#shortlist-role-menu")) {
+      MI.el("shortlist-role-menu").classList.add("hidden");
+    }
+  });
+};
+
+MI.extras.renderShortlistRoleMenu = function renderShortlistRoleMenu() {
+  MI.el("shortlist-role-menu").innerHTML = MI.state.roles.map((r) => `
+    <button class="role-menu-item${r.role_id === MI.extras.currentShortlistRoleId ? " active" : ""}" data-role-id="${r.role_id}">
+      <span>${r.title}</span><span class="role-menu-id">${r.role_id}</span>
+    </button>`).join("");
+  const current = MI.state.roles.find((r) => r.role_id === MI.extras.currentShortlistRoleId);
+  MI.el("shortlist-role-switcher-title").textContent = current ? current.title : "Select role";
+};
+
+MI.extras.selectShortlistRole = function selectShortlistRole(roleId) {
+  MI.extras.currentShortlistRoleId = roleId;
+  MI.extras.renderShortlistRoleMenu();
+  MI.el("shortlist-role-menu").classList.add("hidden");
+  MI.extras.renderShortlistView();
+};
+
+MI.extras.enterShortlistView = function enterShortlistView() {
+  if (!MI.extras.currentShortlistRoleId) {
+    MI.extras.currentShortlistRoleId = MI.state.roleId || (MI.state.roles[0] && MI.state.roles[0].role_id);
+  }
+  MI.extras.renderShortlistRoleMenu();
+  MI.extras.renderShortlistView();
+};
+
+MI.extras.currentShortlistSession = function currentShortlistSession() {
+  const sessions = MI.storage.listSessions().filter((s) => s.role_id === MI.extras.currentShortlistRoleId);
+  return sessions[0] || null;
+};
+
+MI.extras.updateExportGate = function updateExportGate() {
+  const session = MI.extras.currentShortlistSession();
+  const ready = Boolean(session && ["reranked", "approved", "exported"].includes(session.status));
+  MI.el("shortlist-export-btn").disabled = !ready;
+  MI.el("shortlist-export-wait").classList.toggle("hidden", ready);
+};
+
+MI.extras.renderShortlistView = function renderShortlistView() {
+  const session = MI.extras.currentShortlistSession();
+  MI.el("shortlist-no-role").classList.toggle("hidden", Boolean(session));
+  if (!session) {
+    MI.el("shortlist-empty").classList.add("hidden");
+    MI.el("shortlist-content").classList.add("hidden");
+    return;
+  }
+  const ranked = (session.score && session.score.ranked) || [];
+  const shortlistIds = new Set(session.shortlist_ids || []);
+  const entries = ranked.filter((e) => shortlistIds.has(e.candidate_id));
+  MI.el("shortlist-empty").classList.toggle("hidden", entries.length > 0);
+  MI.el("shortlist-content").classList.toggle("hidden", entries.length === 0);
+  if (!entries.length) return;
+  const opts = { showCheckbox: true, analyses: session.analyses || {}, shortlistIds, sessionId: session.id };
+  MI.el("shortlist-table-body").innerHTML = entries.map((e) => MI.views.renderCandidateRow(e, opts)).join("");
+  const approved = session.approved_ids || [];
+  document.querySelectorAll("#shortlist-table-body .approve-cb").forEach((cb) => { cb.checked = approved.includes(cb.dataset.id); });
+  if (session.status === "exported" && session.export) MI.drawer.paintExportOutput(session.export, session.role_id);
+  else MI.el("shortlist-export-output").classList.add("hidden");
+  MI.extras.updateExportGate();
+};
+
 /* ---------- Searches ---------- */
 
 function sessionRowHtml(session) {
@@ -210,12 +286,18 @@ MI.extras.renderAddStepMenu = function renderAddStepMenu() {
     `<div class="outreach-add-step" title="Not in scope — integration point">${o}</div>`).join("");
 };
 
+MI.extras.outreachSession = function outreachSession() {
+  return MI.storage.listSessions().find((s) => s.role_id === MI.state.roleId) || null;
+};
+
 MI.extras.renderStepCard = function renderStepCard(stepId) {
   const step = OUTREACH_STEPS.find((s) => s.id === stepId);
+  const session = MI.extras.outreachSession();
+  if (!session) return;
   const candidateId = MI.el("outreach-candidate-select").value;
-  const entry = MI.state.scoreResult.ranked.find((e) => e.candidate_id === candidateId);
-  const roleTitle = MI.state.roles.find((r) => r.role_id === MI.state.roleId).title;
-  const tokens = { candidate_id: entry.candidate_id, role_title: roleTitle, top_overlap: outreachTopOverlap(entry, MI.state.analyses[candidateId]) };
+  const entry = (session.score.ranked || []).find((e) => e.candidate_id === candidateId);
+  const roleTitle = session.role_title;
+  const tokens = { candidate_id: entry.candidate_id, role_title: roleTitle, top_overlap: outreachTopOverlap(entry, (session.analyses || {})[candidateId]) };
   MI.el("outreach-step-card").innerHTML = `
     <span class="section-label">Step ${step.id}: ${step.label}</span>
     <p style="margin:.75rem 0 0; font-size:13px;"><strong style="display:inline-block;width:60px;">From</strong> <span class="no-accounts">No accounts connected</span></p>
@@ -228,8 +310,10 @@ MI.extras.renderStepCard = function renderStepCard(stepId) {
 };
 
 MI.extras.renderOutreach = function renderOutreach() {
-  const ranked = (MI.state.scoreResult && MI.state.scoreResult.ranked) || [];
-  const shortlisted = ranked.filter((e) => MI.state.shortlistIds.has(e.candidate_id));
+  const session = MI.extras.outreachSession();
+  const ranked = (session && session.score && session.score.ranked) || [];
+  const shortlistIds = new Set((session && session.shortlist_ids) || []);
+  const shortlisted = ranked.filter((e) => shortlistIds.has(e.candidate_id));
   MI.el("outreach-empty").classList.toggle("hidden", shortlisted.length > 0);
   MI.el("outreach-content").classList.toggle("hidden", shortlisted.length === 0);
   if (!shortlisted.length) return;

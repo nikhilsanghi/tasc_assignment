@@ -1,4 +1,4 @@
-/* Drawer, shortlist flow, toasts, modal, Shortlist view, export rendering. */
+/* Detail drawer, shortlist toggle, toasts, Shortlist-view export rendering. */
 MI.drawer = {};
 
 /* ---------- wiring ---------- */
@@ -8,7 +8,10 @@ MI.drawer.wire = function wire() {
   MI.el("drawer-overlay").addEventListener("click", MI.drawer.closeDetail);
   MI.el("drawer-prev").addEventListener("click", () => MI.drawer.stepDetail(-1));
   MI.el("drawer-next").addEventListener("click", () => MI.drawer.stepDetail(1));
-  MI.el("shortlist-export-btn").addEventListener("click", () => MI.drawer.onExport());
+  MI.el("shortlist-export-btn").addEventListener("click", () => {
+    const session = MI.extras.currentShortlistSession();
+    if (session) MI.drawer.exportSession(session.id);
+  });
   document.addEventListener("keydown", (ev) => {
     if (MI.el("detail-drawer").classList.contains("hidden")) return;
     if (ev.key === "Escape") MI.drawer.closeDetail();
@@ -17,10 +20,28 @@ MI.drawer.wire = function wire() {
   });
   document.addEventListener("click", (ev) => {
     const shortlistBtn = ev.target.closest(".btn-shortlist");
-    if (shortlistBtn) MI.drawer.toggleShortlist(shortlistBtn.dataset.id);
-    const detailsBtn = ev.target.closest(".btn-details");
-    if (detailsBtn && !detailsBtn.disabled) MI.drawer.openDetail(detailsBtn.dataset.id);
+    if (shortlistBtn) { MI.drawer.toggleShortlist(shortlistBtn.dataset.id, shortlistBtn.dataset.sessionId); return; }
+    const retryBtn = ev.target.closest("#drawer-retry-analysis");
+    if (retryBtn) { MI.drawer.retryAnalysis(retryBtn.dataset.id); return; }
+    const row = ev.target.closest(".candidate-row");
+    if (!row || ev.target.closest(".approve-cb")) return;
+    const inSourcing = row.closest("#candidate-table-body");
+    const context = inSourcing ? MI.drawer.sourcingContext() : MI.drawer.shortlistRowContext();
+    if (context) MI.drawer.openDetail(row.dataset.id, context);
   });
+};
+
+MI.drawer.sourcingContext = function sourcingContext() {
+  if (!MI.state.scoreResult) return null;
+  return { ranked: MI.state.scoreResult.ranked, analyses: MI.state.analyses, rerank: MI.state.rerankResult, sessionId: MI.state.sessionId };
+};
+
+MI.drawer.shortlistRowContext = function shortlistRowContext() {
+  const session = MI.extras.currentShortlistSession();
+  if (!session) return null;
+  const ranked = (session.score && session.score.ranked) || [];
+  const ids = new Set(session.shortlist_ids || []);
+  return { ranked: ranked.filter((e) => ids.has(e.candidate_id)), analyses: session.analyses || {}, rerank: session.rerank, sessionId: session.id };
 };
 
 /* ---------- toast ---------- */
@@ -37,51 +58,37 @@ MI.drawer.showToast = function showToast(message, undoFn) {
   toastTimer = setTimeout(() => MI.el("toast").classList.add("hidden"), 5000);
 };
 
-/* ---------- shortlist ---------- */
-
-MI.drawer.updateShortlistButtons = function updateShortlistButtons(candidateId) {
-  const shortlisted = MI.state.shortlistIds.has(candidateId);
-  document.querySelectorAll(`.btn-shortlist[data-id="${candidateId}"]`).forEach((btn) => {
-    btn.textContent = shortlisted ? "Shortlisted ✓" : "Shortlist";
-  });
-};
+/* ---------- shortlist (role/session-scoped) ---------- */
 
 MI.drawer.updateShortlistCount = function updateShortlistCount() {
-  MI.el("count-shortlist").textContent = MI.state.shortlistIds.size;
+  const total = MI.storage.listSessions().reduce((sum, s) => sum + ((s.shortlist_ids || []).length), 0);
+  MI.el("count-shortlist").textContent = total;
 };
 
-MI.drawer.toggleShortlist = function toggleShortlist(candidateId) {
-  const wasShortlisted = MI.state.shortlistIds.has(candidateId);
-  if (wasShortlisted) {
-    MI.state.shortlistIds.delete(candidateId);
-    MI.drawer.showToast(`Removed ${candidateId} from shortlist`, () => {
-      MI.state.shortlistIds.add(candidateId);
-      MI.drawer.updateShortlistButtons(candidateId);
-      MI.drawer.updateShortlistCount();
-      MI.drawer.renderShortlistView();
-    });
-  } else {
-    MI.state.shortlistIds.add(candidateId);
-    MI.drawer.showToast(`Added ${candidateId} to shortlist`, () => {
-      MI.state.shortlistIds.delete(candidateId);
-      MI.drawer.updateShortlistButtons(candidateId);
-      MI.drawer.updateShortlistCount();
-      MI.drawer.renderShortlistView();
-    });
+MI.drawer.toggleShortlist = function toggleShortlist(candidateId, sessionId) {
+  const session = MI.storage.getSession(sessionId);
+  if (!session) return;
+  const ids = new Set(session.shortlist_ids || []);
+  const wasShortlisted = ids.has(candidateId);
+  if (wasShortlisted) ids.delete(candidateId); else ids.add(candidateId);
+  MI.storage.updateSessionById(sessionId, { shortlist_ids: Array.from(ids) });
+  if (sessionId === MI.state.sessionId) {
+    if (wasShortlisted) MI.state.shortlistIds.delete(candidateId); else MI.state.shortlistIds.add(candidateId);
   }
-  MI.drawer.updateShortlistButtons(candidateId);
+  MI.drawer.showToast(`${wasShortlisted ? "Removed" : "Added"} ${candidateId} ${wasShortlisted ? "from" : "to"} shortlist`,
+    () => MI.drawer.toggleShortlist(candidateId, sessionId));
+  MI.drawer.refreshShortlistButtons(candidateId, sessionId);
   MI.drawer.updateShortlistCount();
-  MI.drawer.renderShortlistView();
+  if (MI.state.view === "shortlist") MI.extras.renderShortlistView();
 };
 
-MI.drawer.renderShortlistView = function renderShortlistView() {
-  const ranked = (MI.state.scoreResult && MI.state.scoreResult.ranked) || [];
-  const entries = ranked.filter((e) => MI.state.shortlistIds.has(e.candidate_id));
-  MI.el("shortlist-empty").classList.toggle("hidden", entries.length > 0);
-  MI.el("shortlist-content").classList.toggle("hidden", entries.length === 0);
-  if (!entries.length) return;
-  MI.el("shortlist-list").innerHTML = entries.map(MI.views.renderCandidateCard).join("");
-  MI.views.wireApproveCheckboxes();
+MI.drawer.refreshShortlistButtons = function refreshShortlistButtons(candidateId, sessionId) {
+  const session = MI.storage.getSession(sessionId);
+  const shortlisted = (session.shortlist_ids || []).includes(candidateId);
+  document.querySelectorAll(`.btn-shortlist[data-id="${candidateId}"][data-session-id="${sessionId}"]`).forEach((btn) => {
+    const labeled = btn.classList.contains("btn-sm");
+    btn.outerHTML = MI.views.shortlistButtonHtml(candidateId, shortlisted, sessionId, labeled);
+  });
 };
 
 /* ---------- detail drawer ---------- */
@@ -111,9 +118,15 @@ function renderDupSection(entry) {
     </div>`;
 }
 
-function renderAnalysisSection(candidateId) {
-  const result = MI.state.analyses[candidateId];
-  if (!result) return `<div class="drawer-section"><span class="section-label">Analyst</span><p class="text-muted">Analysis still in progress…</p></div>`;
+function renderAnalysisSection(candidateId, ctx) {
+  const result = ctx.analyses[candidateId];
+  if (!result) {
+    const failed = ctx.sessionId === MI.state.sessionId && MI.state.analysisErrors[candidateId];
+    if (failed) {
+      return `<div class="drawer-section"><span class="section-label">Analyst</span><p class="error-text">${MI.views.actionErrorMessage(failed)}</p><button type="button" class="btn btn-secondary btn-sm" id="drawer-retry-analysis" data-id="${candidateId}">Retry analysis</button></div>`;
+    }
+    return `<div class="drawer-section"><span class="section-label">Analyst</span><p class="text-muted">Analysis still in progress…</p></div>`;
+  }
   const a = result.analysis;
   const overlaps = a.overlaps.map((o) => `<li>${o.requirement}: "${MI.views.highlightEvidence(o.evidence, o.evidence)}" (${o.source_field}, ${o.tier})</li>`).join("");
   const gaps = a.gaps.map((g) => `<li>${g.requirement} (${g.severity}): ${g.note}</li>`).join("");
@@ -130,10 +143,9 @@ function renderAnalysisSection(candidateId) {
     <div class="drawer-section"><span class="section-label">Data flags</span><p>${a.data_flags.join(", ") || "none"} · Confidence: ${a.confidence}</p></div>`;
 }
 
-function renderRerankSection(candidateId) {
-  const rr = MI.state.rerankResult;
-  if (!rr) return "";
-  const verdict = rr.disagreements.find((d) => d.candidate_id === candidateId);
+function renderRerankSection(candidateId, ctx) {
+  if (!ctx.rerank) return "";
+  const verdict = ctx.rerank.disagreements.find((d) => d.candidate_id === candidateId);
   return `
     <div class="drawer-section">
       <span class="section-label">Reranker verdict</span>
@@ -144,9 +156,12 @@ function renderRerankSection(candidateId) {
 }
 
 MI.drawer.renderDetail = function renderDetail(candidateId) {
-  const entry = MI.state.scoreResult.ranked.find((e) => e.candidate_id === candidateId);
+  const ctx = MI.drawer.context;
+  const entry = ctx.ranked.find((e) => e.candidate_id === candidateId);
   if (!entry) return;
   MI.state.drawerCandidateId = candidateId;
+  const session = MI.storage.getSession(ctx.sessionId);
+  const shortlisted = Boolean(session && (session.shortlist_ids || []).includes(candidateId));
   MI.el("drawer-body").innerHTML = `
     <div class="candidate-card">
       <div class="candidate-card-header">
@@ -159,18 +174,26 @@ MI.drawer.renderDetail = function renderDetail(candidateId) {
         </div>
         <div class="score-badge ${entry.band}"><span class="n">${entry.score}</span><span class="label">FIT SCORE</span></div>
       </div>
-      ${MI.views.candidateActionRow(entry.candidate_id)}
+      <div class="candidate-action-row">${MI.views.shortlistButtonHtml(candidateId, shortlisted, ctx.sessionId, true)}</div>
     </div>
     <div class="drawer-section"><span class="section-label">Criteria</span>${MI.views.renderSubscores(entry.subscores)}</div>
     <div class="drawer-section"><span class="section-label">Matched skills</span><div class="chip-row">${MI.views.renderSkillChips(entry.subscores)}</div></div>
     ${renderFiredOps("Boosts fired", entry.boosts_fired)}
     ${renderFiredOps("Penalties fired", entry.penalties_fired)}
     ${renderDupSection(entry)}
-    ${renderAnalysisSection(candidateId)}
-    ${renderRerankSection(candidateId)}`;
+    ${renderAnalysisSection(candidateId, ctx)}
+    ${renderRerankSection(candidateId, ctx)}`;
 };
 
-MI.drawer.openDetail = function openDetail(candidateId) {
+MI.drawer.retryAnalysis = function retryAnalysis(candidateId) {
+  const ctx = MI.drawer.context;
+  const entry = ctx.ranked.find((e) => e.candidate_id === candidateId);
+  if (!entry) return;
+  MI.views.analyzeOne(entry).then(() => MI.drawer.renderDetail(candidateId));
+};
+
+MI.drawer.openDetail = function openDetail(candidateId, context) {
+  MI.drawer.context = context;
   MI.drawer.renderDetail(candidateId);
   MI.el("drawer-overlay").classList.remove("hidden");
   MI.el("detail-drawer").classList.remove("hidden");
@@ -185,13 +208,13 @@ MI.drawer.closeDetail = function closeDetail() {
 };
 
 MI.drawer.stepDetail = function stepDetail(delta) {
-  const ranked = MI.state.scoreResult.ranked;
+  const ranked = MI.drawer.context.ranked;
   const i = ranked.findIndex((e) => e.candidate_id === MI.state.drawerCandidateId);
   const next = ranked[(i + delta + ranked.length) % ranked.length];
   if (next) MI.drawer.renderDetail(next.candidate_id);
 };
 
-/* ---------- export rendering (unchanged payload assembly, moved verbatim) ---------- */
+/* ---------- export (built from a stored session — live or historical, same code path) ---------- */
 
 MI.drawer.mdToHtml = function mdToHtml(md) {
   return md.split("\n").map((line) => {
@@ -214,34 +237,33 @@ MI.drawer.download = function download(filename, content, type) {
   URL.revokeObjectURL(url);
 };
 
-function paintExportOutput(prefix, result) {
-  MI.el(`${prefix}export-output`).classList.remove("hidden");
-  MI.el(`${prefix}markdown-preview`).innerHTML = MI.drawer.mdToHtml(result.markdown);
-  MI.el(`${prefix}download-md-btn`).onclick = () => MI.drawer.download(`shortlist_${MI.state.roleId}.md`, result.markdown, "text/markdown");
-  MI.el(`${prefix}download-audit-btn`).onclick = () => MI.drawer.download(`audit_${MI.state.roleId}.json`, JSON.stringify(result.audit_json, null, 1), "application/json");
-}
+MI.drawer.paintExportOutput = function paintExportOutput(result, roleId) {
+  MI.el("shortlist-export-output").classList.remove("hidden");
+  MI.el("shortlist-markdown-preview").innerHTML = MI.drawer.mdToHtml(result.markdown);
+  MI.el("shortlist-download-md-btn").onclick = () => MI.drawer.download(`shortlist_${roleId}.md`, result.markdown, "text/markdown");
+  MI.el("shortlist-download-audit-btn").onclick = () => MI.drawer.download(`audit_${roleId}.json`, JSON.stringify(result.audit_json, null, 1), "application/json");
+};
 
-MI.drawer.onExport = async function onExport() {
-  MI.state.approvedAt = new Date().toISOString();
+MI.drawer.exportSession = async function exportSession(sessionId) {
+  const session = MI.storage.getSession(sessionId);
+  if (!session) return;
   const body = {
-    role_id: MI.state.roleId, rubric: MI.state.rubric, approved_ids: Array.from(MI.state.approvedIds),
-    analyses: MI.state.analyses, rerank: MI.state.rerankResult,
+    role_id: session.role_id, rubric: session.rubric, approved_ids: session.approved_ids || [],
+    analyses: session.analyses || {}, rerank: session.rerank,
     session_meta: {
-      guidance: MI.state.guidance, rejected: MI.state.rejected, adjustments: MI.state.adjustments,
-      decomposition: MI.state.scoreResult.decomposition, compiled_at: MI.state.compiledAt, approved_at: MI.state.approvedAt,
+      guidance: session.guidance, rejected: (session.compile && session.compile.rejected) || [],
+      adjustments: (session.compile && session.compile.adjustments) || [],
+      decomposition: {}, compiled_at: session.created_at, approved_at: new Date().toISOString(),
     },
   };
   let result;
   try {
     result = await MI.api("export", body);
   } catch (err) {
-    MI.views.showActionError("export-btn", err);
     MI.views.showActionError("shortlist-export-btn", err);
     return;
   }
-  MI.views.clearActionError("export-btn");
   MI.views.clearActionError("shortlist-export-btn");
-  MI.storage.updateSession({ status: "exported", export: { markdown: result.markdown, audit_json: result.audit_json } });
-  paintExportOutput("", result);
-  paintExportOutput("shortlist-", result);
+  MI.storage.updateSessionById(sessionId, { status: "exported", export: { markdown: result.markdown, audit_json: result.audit_json } });
+  MI.drawer.paintExportOutput(result, session.role_id);
 };

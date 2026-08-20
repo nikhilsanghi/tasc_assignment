@@ -3,7 +3,7 @@ const MI = {};
 
 MI.state = {
   accessCode: null, roles: [], roleId: null, rubric: null, scoreResult: null,
-  analyses: {}, rerankResult: null, approvedIds: new Set(), shortlistIds: new Set(),
+  analyses: {}, analysisErrors: {}, rerankResult: null, shortlistIds: new Set(),
   compiledAt: null, approvedAt: null, rejected: [], adjustments: [], guidance: "",
   view: "sourcing", drawerCandidateId: null, sessionId: null,
 };
@@ -89,7 +89,7 @@ MI.storage.startSession = function startSession(roleId, roleTitle, guidance) {
   const session = {
     id, created_at: now, updated_at: now, role_id: roleId, role_title: roleTitle, guidance,
     status: "compiled", rubric: null, compile: null, score: null, analyses: {},
-    rerank: null, approved_ids: [], export: null,
+    rerank: null, approved_ids: [], shortlist_ids: [], export: null,
   };
   store.sessions[id] = session;
   store.order.unshift(id);
@@ -107,13 +107,17 @@ MI.storage.updateSearchesCount = function updateSearchesCount() {
   MI.el("count-searches").textContent = MI.storage.load().order.length;
 };
 
-MI.storage.updateSession = function updateSession(patch) {
-  if (!MI.state.sessionId) return;
+MI.storage.updateSessionById = function updateSessionById(id, patch) {
+  if (!id) return;
   const store = MI.storage.load();
-  const session = store.sessions[MI.state.sessionId];
+  const session = store.sessions[id];
   if (!session) return;
   Object.assign(session, patch, { updated_at: new Date().toISOString() });
   MI.storage.save(store);
+};
+
+MI.storage.updateSession = function updateSession(patch) {
+  MI.storage.updateSessionById(MI.state.sessionId, patch);
 };
 
 MI.storage.listSessions = function listSessions() {
@@ -155,6 +159,7 @@ MI.router = {
     if (view === "reports") MI.extras.renderReports();
     if (view === "overview") MI.extras.renderOverview();
     if (view === "outreach") MI.extras.renderOutreach();
+    if (view === "shortlist") MI.extras.enterShortlistView();
   },
 };
 
@@ -206,7 +211,6 @@ function selectRole(roleId, skipConfirm) {
   MI.state.roleId = roleId;
   renderRoleSwitcher();
   MI.el("role-menu").classList.add("hidden");
-  MI.el("sourcing-role-title").textContent = role.title;
 }
 
 function wireRoleSwitcher() {
@@ -229,12 +233,13 @@ async function boot() {
   wireRoleSwitcher();
   MI.el("compile-btn").addEventListener("click", () => MI.views.onCompile());
   MI.el("confirm-score-btn").addEventListener("click", () => MI.views.onConfirmScore());
-  MI.el("export-btn").addEventListener("click", () => MI.drawer.onExport());
   MI.views.wireCriteriaBar();
+  MI.views.wireApproveCheckboxes();
   MI.drawer.wire();
   MI.extras.wireSearches();
   MI.extras.wireReports();
   MI.extras.wireOutreach();
+  MI.extras.wireShortlistRoleSwitcher();
   MI.storage.updateSearchesCount();
   MI.router.init();
 }

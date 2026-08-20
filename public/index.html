@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Candidate-Role Match Intelligence</title>
+<title>TASC Intelligence</title>
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -10,8 +10,8 @@
 <!-- access-code gate -->
 <div id="access-overlay" class="overlay">
   <div class="overlay-box">
-    <div class="overlay-mark">MI</div>
-    <h2>Candidate-Role Match Intelligence</h2>
+    <div class="overlay-mark">TI</div>
+    <h2>TASC Intelligence</h2>
     <p class="overlay-sub">A governed, steerable ranking copilot for in-house recruiters.</p>
     <input id="access-input" type="password" placeholder="Access code" autocomplete="off">
     <button id="access-submit" class="btn btn-primary btn-block">Enter</button>
@@ -24,17 +24,8 @@
   <!-- sidebar -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <span class="brand-mark">MI</span>
-      <span class="brand-name">Match Intelligence</span>
-    </div>
-
-    <div class="role-switcher-wrap">
-      <button id="role-switcher" class="role-switcher" type="button">
-        <span class="role-switcher-badge" aria-hidden="true">R</span>
-        <span class="role-switcher-title" id="role-switcher-title">Select role</span>
-        <svg class="icon icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
-      </button>
-      <div id="role-menu" class="role-menu hidden"></div>
+      <span class="brand-mark">TI</span>
+      <span class="brand-name">TASC Intelligence</span>
     </div>
 
     <nav class="sidebar-nav">
@@ -93,10 +84,17 @@
       </div>
     </section>
 
-    <!-- Sourcing: guidance -> compile -> echo-back -> score -> analyst cards -> rerank -> export -->
+    <!-- Sourcing: role -> guidance -> compile -> echo-back -> score -> ranked table -> shortlist -->
     <section id="view-sourcing" class="view">
       <header class="view-header">
-        <h1 id="sourcing-role-title">Sourcing</h1>
+        <div class="role-switcher-wrap">
+          <button id="role-switcher" class="role-switcher role-switcher-lg" type="button">
+            <span class="role-switcher-badge" aria-hidden="true">R</span>
+            <span class="role-switcher-title" id="role-switcher-title">Select role</span>
+            <svg class="icon icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="role-menu" class="role-menu hidden"></div>
+        </div>
       </header>
 
       <div class="criteria-bar editing" id="criteria-bar">
@@ -125,40 +123,49 @@
 
       <section id="score-section" class="hidden">
         <div class="view-subheader">
-          <h2>Ranked shortlist</h2>
+          <h2>Ranked candidates</h2>
           <span id="filtered-out-line" class="text-muted"></span>
+          <span id="rerank-summary-line" class="text-muted"></span>
         </div>
-        <div id="candidate-list" class="candidate-list"></div>
+        <div class="table-wrap">
+          <table class="candidate-table">
+            <thead>
+              <tr><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th><th></th></tr>
+            </thead>
+            <tbody id="candidate-table-body"></tbody>
+          </table>
+        </div>
         <div id="insufficient-strip" class="strip hidden">
           <strong>Insufficient data — needs sourcing follow-up:</strong>
           <span id="insufficient-ids"></span>
         </div>
       </section>
-
-      <section id="cards-section" class="card hidden">
-        <span class="section-label">Candidate analysis</span>
-        <div id="analyst-cards"></div>
-      </section>
-
-      <section id="rerank-section" class="card hidden">
-        <span class="section-label">Reranker second opinion</span>
-        <div id="rerank-disagreements"></div>
-      </section>
-
-      <section id="export-section" class="card hidden">
-        <button id="export-btn" class="btn btn-primary">Approve &amp; export</button>
-        <div id="export-output" class="hidden">
-          <div id="markdown-preview"></div>
-          <button id="download-md-btn" class="btn btn-secondary">Download .md</button>
-          <button id="download-audit-btn" class="btn btn-secondary">Download audit.json</button>
-        </div>
-      </section>
     </section>
 
-    <!-- Shortlist: candidates flagged from Sourcing -->
+    <!-- Shortlist: role-scoped — every role keeps its own shortlist -->
     <section id="view-shortlist" class="view hidden">
-      <header class="view-header"><h1>Shortlist</h1></header>
-      <div id="shortlist-empty" class="empty-state">
+      <header class="view-header">
+        <h1>Shortlist</h1>
+        <div class="role-switcher-wrap">
+          <button id="shortlist-role-switcher" class="role-switcher" type="button">
+            <span class="role-switcher-badge" aria-hidden="true">R</span>
+            <span class="role-switcher-title" id="shortlist-role-switcher-title">Select role</span>
+            <svg class="icon icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="shortlist-role-menu" class="role-menu hidden"></div>
+        </div>
+      </header>
+
+      <div id="shortlist-no-role" class="empty-state hidden">
+        <div class="empty-state-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+        </div>
+        <h2>No searches yet for this role</h2>
+        <p>Run a search in Sourcing for this role first.</p>
+        <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
+      </div>
+
+      <div id="shortlist-empty" class="empty-state hidden">
         <div class="empty-state-icon">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
         </div>
@@ -166,12 +173,20 @@
         <p>Shortlist candidates from Sourcing to review and approve them here.</p>
         <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
       </div>
+
       <div id="shortlist-content" class="hidden">
         <p class="text-muted shortlist-note">Nothing is exported without your explicit approval.</p>
-        <div id="shortlist-list" class="candidate-list"></div>
+        <div class="table-wrap">
+          <table class="candidate-table">
+            <thead>
+              <tr><th></th><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th><th></th></tr>
+            </thead>
+            <tbody id="shortlist-table-body"></tbody>
+          </table>
+        </div>
         <section class="card">
           <button id="shortlist-export-btn" class="btn btn-primary" disabled>Approve &amp; export</button>
-          <p id="shortlist-export-wait" class="text-muted">Waiting for candidate analysis to finish…</p>
+          <p id="shortlist-export-wait" class="text-muted">This search hasn't finished analysis + reranking yet.</p>
           <div id="shortlist-export-output" class="hidden">
             <div id="shortlist-markdown-preview"></div>
             <button id="shortlist-download-md-btn" class="btn btn-secondary">Download .md</button>

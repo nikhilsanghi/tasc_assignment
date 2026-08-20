@@ -67,17 +67,16 @@ MI.views.renderCriteriaBar = function renderCriteriaBar(result) {
 /* ---------- session reset (new compile or role switch) ---------- */
 
 MI.views.resetSourcingUI = function resetSourcingUI() {
-  MI.state.rubric = null; MI.state.scoreResult = null; MI.state.analyses = {};
-  MI.state.rerankResult = null; MI.state.approvedIds = new Set(); MI.state.shortlistIds = new Set();
+  MI.state.rubric = null; MI.state.scoreResult = null; MI.state.analyses = {}; MI.state.analysisErrors = {};
+  MI.state.rerankResult = null; MI.state.shortlistIds = new Set();
   MI.state.compiledAt = null; MI.state.approvedAt = null; MI.state.rejected = []; MI.state.adjustments = [];
   MI.state.guidance = ""; MI.state.sessionId = null;
   MI.el("guidance-input").value = "";
   MI.el("criteria-bar").classList.add("editing");
-  ["echo-section", "score-section", "cards-section", "rerank-section", "export-section"].forEach((id) => MI.el(id).classList.add("hidden"));
-  MI.el("candidate-list").innerHTML = "";
-  MI.el("analyst-cards").innerHTML = "";
+  ["echo-section", "score-section"].forEach((id) => MI.el(id).classList.add("hidden"));
+  MI.el("candidate-table-body").innerHTML = "";
   MI.el("insufficient-strip").classList.add("hidden");
-  MI.el("export-output").classList.add("hidden");
+  MI.el("rerank-summary-line").textContent = "";
   MI.drawer.updateShortlistCount();
 };
 
@@ -157,76 +156,68 @@ MI.views.renderSkillChips = function renderSkillChips(subscores) {
   return hits.length ? hits.map(skillChip).join("") : '<span class="text-muted">No skill matches evidenced.</span>';
 };
 
-MI.views.candidateActionRow = function candidateActionRow(candidateId) {
-  const shortlisted = MI.state.shortlistIds.has(candidateId);
-  const analyzed = Boolean(MI.state.analyses[candidateId]);
-  return `
-    <div class="candidate-action-row">
-      <button type="button" class="btn btn-secondary btn-sm btn-shortlist" data-id="${candidateId}">${shortlisted ? "Shortlisted ✓" : "Shortlist"}</button>
-      <button type="button" class="btn btn-ghost btn-sm btn-details" data-id="${candidateId}" ${analyzed ? "" : "disabled"}>${analyzed ? "Details →" : "Analyzing…"}</button>
-    </div>`;
+MI.views.rowFlagsHtml = function rowFlagsHtml(entry) {
+  const isDup = (entry.dup_members || []).length > 1;
+  const shown = entry.flags.slice(0, 2);
+  const extra = entry.flags.length - shown.length;
+  return `${shown.map((f) => `<span class="pill">${f}</span>`).join("")}${extra > 0 ? `<span class="pill">+${extra}</span>` : ""}${isDup ? `<span class="pill dup-badge">dup ×${entry.dup_members.length}</span>` : ""}`;
 };
 
-MI.views.renderCandidateCard = function renderCandidateCard(entry) {
-  const isDup = (entry.dup_members || []).length > 1;
-  const flags = entry.flags.length
-    ? `<div class="card-flags">${entry.flags.map((f) => `<span class="pill">${f}</span>`).join("")}${isDup ? `<span class="pill dup-badge">dup ×${entry.dup_members.length}</span>` : ""}</div>`
-    : (isDup ? `<div class="card-flags"><span class="pill dup-badge">dup ×${entry.dup_members.length}</span></div>` : "");
+MI.views.shortlistButtonHtml = function shortlistButtonHtml(candidateId, shortlisted, sessionId, labeled) {
+  const icon = `<svg class="icon" viewBox="0 0 24 24" fill="${shortlisted ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>`;
+  if (labeled) {
+    return `<button type="button" class="btn btn-secondary btn-sm btn-shortlist${shortlisted ? " active" : ""}" data-id="${candidateId}" data-session-id="${sessionId}">${icon} ${shortlisted ? "Shortlisted" : "Shortlist"}</button>`;
+  }
   return `
-    <div class="candidate-card" id="candidate-${entry.candidate_id}">
-      <input type="checkbox" class="approve-cb card-checkbox" data-id="${entry.candidate_id}" aria-label="Approve ${entry.candidate_id}">
-      <div class="candidate-card-header">
-        <div class="candidate-identity">
-          ${MI.views.avatarHtml(entry.candidate_id)}
+    <button type="button" class="row-shortlist-btn btn-icon btn-shortlist${shortlisted ? " active" : ""}" data-id="${candidateId}" data-session-id="${sessionId}" aria-label="${shortlisted ? "Remove from shortlist" : "Add to shortlist"}">
+      ${icon}
+    </button>`;
+};
+
+MI.views.renderCandidateRow = function renderCandidateRow(entry, opts) {
+  const analyzed = Boolean(opts.analyses[entry.candidate_id]);
+  const checkboxCell = opts.showCheckbox
+    ? `<td><input type="checkbox" class="approve-cb" data-id="${entry.candidate_id}" data-session-id="${opts.sessionId}" aria-label="Approve ${entry.candidate_id}"></td>` : "";
+  return `
+    <tr class="candidate-row" data-id="${entry.candidate_id}">
+      ${checkboxCell}
+      <td>
+        <div class="row-id-cell">
+          ${MI.views.avatarHtml(entry.candidate_id).replace("candidate-avatar", "candidate-avatar row-avatar")}
           <div>
-            <div class="candidate-title">${entry.candidate_id} — ${entry.headline || ""}</div>
-            <div class="candidate-location">${[entry.location && entry.location.city, entry.country].filter(Boolean).join(", ")}</div>
+            <div class="row-headline">${entry.candidate_id} — ${entry.headline || ""}</div>
+            <div class="row-status" data-status-for="${entry.candidate_id}">${analyzed ? "" : "Analyzing…"}</div>
           </div>
         </div>
-        <div class="score-badge ${entry.band}"><span class="n">${entry.score}</span><span class="label">FIT SCORE</span></div>
-      </div>
-      ${MI.views.candidateActionRow(entry.candidate_id)}
-      ${flags}
-      <div class="card-section">
-        <span class="section-label">Criteria</span>
-        ${MI.views.renderSubscores(entry.subscores)}
-      </div>
-      <div class="card-section">
-        <span class="section-label">Matched skills</span>
-        <div class="chip-row">${MI.views.renderSkillChips(entry.subscores)}</div>
-      </div>
-      <div class="card-section">
-        <span class="section-label">Profile</span>
-        <div class="profile-row">
-          <span><strong>${entry.experience_years ?? "—"}</strong> yrs experience</span>
-          <span>Seniority <strong>${entry.seniority_level ?? "—"}</strong></span>
-          <span>Notice <strong>${entry.notice_days ?? "—"}</strong>d</span>
-          <span><strong>${entry.country || "—"}</strong></span>
-        </div>
-      </div>
-    </div>`;
+      </td>
+      <td class="row-location">${[entry.location && entry.location.city, entry.country].filter(Boolean).join(", ")}</td>
+      <td><div class="score-badge score-badge-sm ${entry.band}"><span class="n">${entry.score}</span></div></td>
+      <td class="row-flags-cell">${MI.views.rowFlagsHtml(entry)}</td>
+      <td>${MI.views.shortlistButtonHtml(entry.candidate_id, opts.shortlistIds.has(entry.candidate_id), opts.sessionId)}</td>
+    </tr>`;
 };
 
 MI.views.wireApproveCheckboxes = function wireApproveCheckboxes() {
-  document.querySelectorAll(".approve-cb").forEach((cb) => {
-    cb.checked = MI.state.approvedIds.has(cb.dataset.id);
-    if (cb.dataset.wired) return;
-    cb.dataset.wired = "1";
-    cb.addEventListener("change", (ev) => {
-      if (ev.target.checked) MI.state.approvedIds.add(ev.target.dataset.id);
-      else MI.state.approvedIds.delete(ev.target.dataset.id);
-      const patch = { approved_ids: Array.from(MI.state.approvedIds) };
-      const current = MI.storage.getSession(MI.state.sessionId);
-      if (current && current.status === "reranked" && MI.state.approvedIds.size > 0) patch.status = "approved";
-      MI.storage.updateSession(patch);
-    });
+  document.addEventListener("click", (ev) => { if (ev.target.closest(".approve-cb")) ev.stopPropagation(); });
+  document.addEventListener("change", (ev) => {
+    const cb = ev.target.closest(".approve-cb");
+    if (!cb) return;
+    const sessionId = cb.dataset.sessionId;
+    const session = MI.storage.getSession(sessionId);
+    if (!session) return;
+    const ids = new Set(session.approved_ids || []);
+    if (cb.checked) ids.add(cb.dataset.id); else ids.delete(cb.dataset.id);
+    const patch = { approved_ids: Array.from(ids) };
+    if (session.status === "reranked" && ids.size > 0) patch.status = "approved";
+    MI.storage.updateSessionById(sessionId, patch);
+    if (MI.state.view === "shortlist") MI.extras.updateExportGate();
   });
 };
 
 MI.views.renderCandidateList = function renderCandidateList(result) {
   MI.el("filtered-out-line").textContent = `filtered out: ${result.filtered_out.length}`;
-  MI.el("candidate-list").innerHTML = result.ranked.map(MI.views.renderCandidateCard).join("");
-  MI.views.wireApproveCheckboxes();
+  const opts = { showCheckbox: false, analyses: MI.state.analyses, shortlistIds: MI.state.shortlistIds, sessionId: MI.state.sessionId };
+  MI.el("candidate-table-body").innerHTML = result.ranked.map((e) => MI.views.renderCandidateRow(e, opts)).join("");
   if (result.insufficient_data.length) {
     MI.el("insufficient-strip").classList.remove("hidden");
     MI.el("insufficient-ids").textContent = result.insufficient_data.join(", ");
@@ -234,8 +225,6 @@ MI.views.renderCandidateList = function renderCandidateList(result) {
 };
 
 MI.views.onConfirmScore = async function onConfirmScore() {
-  MI.el("shortlist-export-btn").disabled = true;
-  MI.el("shortlist-export-wait").classList.remove("hidden");
   try {
     const result = await MI.api("score", { role_id: MI.state.roleId, rubric: MI.state.rubric });
     MI.views.clearActionError("confirm-score-btn");
@@ -252,20 +241,7 @@ MI.views.onConfirmScore = async function onConfirmScore() {
   }
 };
 
-/* ---------- analyst cards (skeleton while streaming) ---------- */
-
-function skeletonCard(id) {
-  return `
-    <div class="skeleton-card" id="card-${id}">
-      <div class="skeleton skeleton-line w-40"></div>
-      <div class="skeleton skeleton-line w-90"></div>
-      <div class="skeleton skeleton-line w-60"></div>
-    </div>`;
-}
-
-MI.views.renderSkeletons = function renderSkeletons(ranked) {
-  MI.el("analyst-cards").innerHTML = ranked.map((e) => skeletonCard(e.candidate_id)).join("");
-};
+/* ---------- analysis (row status text streams as each candidate completes) ---------- */
 
 MI.views.highlightEvidence = function highlightEvidence(text, evidence) {
   if (!text) return "";
@@ -274,68 +250,27 @@ MI.views.highlightEvidence = function highlightEvidence(text, evidence) {
   return text.slice(0, idx) + `<mark>${text.slice(idx, idx + evidence.length)}</mark>` + text.slice(idx + evidence.length);
 };
 
-MI.views.renderCard = function renderCard(entry, result) {
-  const a = result.analysis;
-  const cacheHit = result.meta.usage && result.meta.usage.cache_read_input_tokens > 0;
-  const overlaps = a.overlaps.map((o) => `<li>${o.requirement}: "${MI.views.highlightEvidence(o.evidence, o.evidence)}" (${o.source_field}, ${o.tier})</li>`).join("");
-  const gaps = a.gaps.map((g) => `<li>${g.requirement} (${g.severity}): ${g.note}</li>`).join("");
-  const questions = a.clarifying_questions.map((q) => `<li>${q.text}</li>`).join("");
-  const card = document.createElement("div");
-  card.className = "analyst-card";
-  card.id = `card-${entry.candidate_id}`;
-  card.innerHTML = `
-    <h3>${entry.candidate_id} — ${entry.headline || ""} ${cacheHit ? '<span class="pill cache-hit">cache hit</span>' : ""}</h3>
-    <p>${a.fit_brief}</p>
-    <strong>Overlaps</strong><ul>${overlaps}</ul>
-    <strong>Gaps</strong><ul>${gaps}</ul>
-    <strong>Questions</strong><ul>${questions}</ul>
-    <p><strong>Flags:</strong> ${a.data_flags.join(", ") || "none"} · <strong>Confidence:</strong> ${a.confidence}</p>`;
-  MI.views.replaceOrAppend(card);
-};
-
-MI.views.renderErrorCard = function renderErrorCard(entry, err) {
-  const card = document.createElement("div");
-  card.className = "analyst-card";
-  card.id = `card-${entry.candidate_id}`;
-  card.innerHTML = `
-    <h3>${entry.candidate_id} — ${entry.headline || ""}</h3>
-    <p class="error-text">Analysis failed (${err.status || "error"}).</p>
-    <button class="btn btn-secondary retry-btn">Retry</button>`;
-  card.querySelector(".retry-btn").addEventListener("click", () => MI.views.analyzeOne(entry));
-  MI.views.replaceOrAppend(card);
-};
-
-MI.views.replaceOrAppend = function replaceOrAppend(card) {
-  const existing = document.getElementById(card.id);
-  if (existing) existing.replaceWith(card);
-  else MI.el("analyst-cards").appendChild(card);
-};
-
-MI.views.markDetailsReady = function markDetailsReady(candidateId) {
-  document.querySelectorAll(`.btn-details[data-id="${candidateId}"]`).forEach((btn) => {
-    btn.disabled = false;
-    btn.textContent = "Details →";
-  });
+MI.views.updateRowStatus = function updateRowStatus(candidateId, text) {
+  document.querySelectorAll(`.row-status[data-status-for="${candidateId}"]`).forEach((el) => { el.textContent = text; });
 };
 
 MI.views.analyzeOne = async function analyzeOne(entry) {
   try {
     const result = await MI.api("analyze", { role_id: MI.state.roleId, candidate_id: entry.candidate_id, rubric: MI.state.rubric });
+    delete MI.state.analysisErrors[entry.candidate_id];
     MI.state.analyses[entry.candidate_id] = result;
     MI.storage.updateSession({ status: "analyzed", analyses: MI.state.analyses });
-    MI.views.renderCard(entry, result);
-    MI.views.markDetailsReady(entry.candidate_id);
+    MI.views.updateRowStatus(entry.candidate_id, "");
     return result;
   } catch (e) {
-    MI.views.renderErrorCard(entry, e);
+    MI.state.analysisErrors[entry.candidate_id] = e;
+    MI.views.updateRowStatus(entry.candidate_id, "Analysis failed");
     return null;
   }
 };
 
 MI.views.analyzeAll = async function analyzeAll(ranked) {
-  MI.el("cards-section").classList.remove("hidden");
   if (!ranked.length) return;
-  MI.views.renderSkeletons(ranked);
   await MI.views.analyzeOne(ranked[0]);
   const rest = ranked.slice(1).map((entry) => () => MI.views.analyzeOne(entry));
   await MI.pool(rest, 4);
@@ -349,17 +284,12 @@ MI.views.onRerank = async function onRerank(ranked) {
   try {
     result = await MI.api("rerank", { role_id: MI.state.roleId, top_ids: ranked.map((e) => e.candidate_id), rubric: MI.state.rubric });
   } catch (err) {
-    MI.el("rerank-section").classList.remove("hidden");
-    MI.el("rerank-disagreements").innerHTML = `<p class="error-text">${MI.views.actionErrorMessage(err)} The ranked order above still stands — only the reranker's second opinion is missing.</p>`;
+    MI.el("rerank-summary-line").textContent = `${MI.views.actionErrorMessage(err)} (reranker second opinion unavailable — ranked order above still stands)`;
     return;
   }
   MI.state.rerankResult = result;
   MI.storage.updateSession({ status: "reranked", rerank: result });
-  MI.el("rerank-section").classList.remove("hidden");
-  MI.el("rerank-disagreements").innerHTML = result.disagreements.length
-    ? result.disagreements.map((d) => `<span class="rerank-badge"><strong>${d.candidate_id}</strong>: det #${d.det_rank} → llm #${d.llm_rank} — ${d.rationale}</span>`).join("")
-    : "<p>Reranker agrees with the deterministic order.</p>";
-  MI.el("export-section").classList.remove("hidden");
-  MI.el("shortlist-export-btn").disabled = false;
-  MI.el("shortlist-export-wait").classList.add("hidden");
+  MI.el("rerank-summary-line").textContent = result.disagreements.length
+    ? `Reranker: ${result.disagreements.length} disagreement(s) — see candidate details`
+    : "Reranker agrees with the deterministic order";
 };
