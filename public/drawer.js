@@ -93,14 +93,14 @@ MI.drawer.refreshShortlistButtons = function refreshShortlistButtons(candidateId
 
 /* ---------- detail drawer ---------- */
 
-function renderFiredOps(label, ops) {
+function renderFiredOps(label, ops, tone) {
   if (!ops || !ops.length) return "";
   return `
     <div class="drawer-section">
       <span class="section-label">${label}</span>
       <div class="chip-row">${ops.map((o) => {
         const snippets = o.evidence.map((e) => `${e.field}: "${e.snippet}"`).join(", ");
-        return `<span class="chip">${o.concept} · ${snippets}</span>`;
+        return `<span class="chip chip-${tone}">${o.concept} · ${snippets}</span>`;
       }).join("")}</div>
     </div>`;
 }
@@ -128,19 +128,21 @@ function renderAnalysisSection(candidateId, ctx) {
     return `<div class="drawer-section"><span class="section-label">Analyst</span><p class="text-muted">Analysis still in progress…</p></div>`;
   }
   const a = result.analysis;
-  const overlaps = a.overlaps.map((o) => `<li>${o.requirement}: "${MI.views.highlightEvidence(o.evidence, o.evidence)}" (${o.source_field}, ${o.tier})</li>`).join("");
-  const gaps = a.gaps.map((g) => `<li>${g.requirement} (${g.severity}): ${g.note}</li>`).join("");
+  const overlaps = a.overlaps.map((o) =>
+    `<li class="evidence-good">${o.requirement}: "${MI.views.highlightEvidence(o.evidence, o.evidence, "good")}" (${o.source_field}, ${o.tier})</li>`).join("");
+  const gaps = a.gaps.map((g) =>
+    `<li class="${g.severity === "required" ? "evidence-bad" : "evidence-warn"}">${g.requirement} (${g.severity}): ${g.note}</li>`).join("");
   const questions = a.clarifying_questions.map((q) => `<li>${q.text}</li>`).join("");
   const cacheHit = result.meta.usage && result.meta.usage.cache_read_input_tokens > 0;
   return `
     <div class="drawer-section">
-      <span class="section-label">Fit brief ${cacheHit ? '<span class="pill cache-hit">cache hit</span>' : ""}</span>
+      <span class="section-label">Fit brief ${cacheHit ? '<span class="pill cache-hit" title="This analysis reused a cached prompt prefix — faster and cheaper to regenerate">cached · faster</span>' : ""}</span>
       <p class="drawer-fit-brief">${a.fit_brief}</p>
     </div>
-    <div class="drawer-section"><span class="section-label">Overlaps</span><ul>${overlaps}</ul></div>
-    <div class="drawer-section"><span class="section-label">Gaps</span><ul>${gaps}</ul></div>
+    <div class="drawer-section"><span class="section-label">Overlaps</span><ul class="tone-list">${overlaps}</ul></div>
+    <div class="drawer-section"><span class="section-label">Gaps</span><ul class="tone-list">${gaps}</ul></div>
     <div class="drawer-section"><span class="section-label">Clarifying questions</span><ul>${questions}</ul></div>
-    <div class="drawer-section"><span class="section-label">Data flags</span><p>${a.data_flags.join(", ") || "none"} · Confidence: ${a.confidence}</p></div>`;
+    <div class="drawer-section"><span class="section-label">Data flags</span><p class="${a.data_flags.length ? "data-flags-warn" : ""}">${a.data_flags.join(", ") || "none"} · Confidence: ${a.confidence}</p></div>`;
 }
 
 function renderRerankSection(candidateId, ctx) {
@@ -178,8 +180,8 @@ MI.drawer.renderDetail = function renderDetail(candidateId) {
     </div>
     <div class="drawer-section"><span class="section-label">Criteria</span>${MI.views.renderSubscores(entry.subscores)}</div>
     <div class="drawer-section"><span class="section-label">Matched skills</span><div class="chip-row">${MI.views.renderSkillChips(entry.subscores)}</div></div>
-    ${renderFiredOps("Boosts fired", entry.boosts_fired)}
-    ${renderFiredOps("Penalties fired", entry.penalties_fired)}
+    ${renderFiredOps("Boosts fired", entry.boosts_fired, "good")}
+    ${renderFiredOps("Penalties fired", entry.penalties_fired, "bad")}
     ${renderDupSection(entry)}
     ${renderAnalysisSection(candidateId, ctx)}
     ${renderRerankSection(candidateId, ctx)}`;

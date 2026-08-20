@@ -88,7 +88,10 @@ MI.extras.renderShortlistView = function renderShortlistView() {
   MI.el("shortlist-empty").classList.toggle("hidden", entries.length > 0);
   MI.el("shortlist-content").classList.toggle("hidden", entries.length === 0);
   if (!entries.length) return;
-  const opts = { showCheckbox: true, analyses: session.analyses || {}, shortlistIds, sessionId: session.id };
+  const opts = {
+    showCheckbox: true, analyses: session.analyses || {}, shortlistIds, sessionId: session.id,
+    rerankMap: MI.views.rerankMap(session.rerank),
+  };
   MI.el("shortlist-table-body").innerHTML = entries.map((e) => MI.views.renderCandidateRow(e, opts)).join("");
   const approved = session.approved_ids || [];
   document.querySelectorAll("#shortlist-table-body .approve-cb").forEach((cb) => { cb.checked = approved.includes(cb.dataset.id); });

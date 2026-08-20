@@ -77,6 +77,7 @@ MI.views.resetSourcingUI = function resetSourcingUI() {
   MI.el("candidate-table-body").innerHTML = "";
   MI.el("insufficient-strip").classList.add("hidden");
   MI.el("rerank-summary-line").textContent = "";
+  MI.el("rerank-summary-line").className = "rerank-pill";
   MI.drawer.updateShortlistCount();
 };
 
@@ -133,6 +134,10 @@ const SUBSCORE_LABELS = {
   seniority: "Seniority", location: "Location", availability: "Availability",
 };
 
+MI.views.subscoreTone = function subscoreTone(pct) {
+  return pct >= 80 ? "good" : pct >= 60 ? "warn" : "bad";
+};
+
 MI.views.renderSubscores = function renderSubscores(subscores) {
   return Object.keys(SUBSCORE_LABELS).map((key) => {
     const s = subscores[key];
@@ -141,7 +146,7 @@ MI.views.renderSubscores = function renderSubscores(subscores) {
     return `
       <div class="subscore-row">
         <span class="subscore-label">${SUBSCORE_LABELS[key]}</span>
-        <div class="subscore-bar"><div class="subscore-bar-fill" style="width:${pct}%"></div></div>
+        <div class="subscore-bar"><div class="subscore-bar-fill tone-${MI.views.subscoreTone(pct)}" style="width:${pct}%"></div></div>
         <span class="subscore-value">${pct}%</span>
         ${s.flags && s.flags.length ? FLAG_ICON : ""}
       </div>`;
@@ -156,6 +161,19 @@ function skillChip(hit) {
 MI.views.renderSkillChips = function renderSkillChips(subscores) {
   const hits = [...(subscores.required_skills.evidence || []), ...(subscores.nice_to_have.evidence || [])];
   return hits.length ? hits.map(skillChip).join("") : '<span class="text-muted">No skill matches evidenced.</span>';
+};
+
+MI.views.rerankMap = function rerankMap(result) {
+  const map = {};
+  ((result && result.disagreements) || []).forEach((d) => { map[d.candidate_id] = d; });
+  return map;
+};
+
+MI.views.rerankCellHtml = function rerankCellHtml(entry, rerankMap) {
+  const d = rerankMap && rerankMap[entry.candidate_id];
+  if (!d) return '<span class="text-muted">—</span>';
+  const arrow = d.delta < 0 ? "↑" : "↓";
+  return `<span class="pill rerank-move-badge" title="Reranker second opinion: deterministic #${d.det_rank} → LLM #${d.llm_rank} — ${d.rationale}">${arrow}${Math.abs(d.delta)}</span>`;
 };
 
 MI.views.rowFlagsHtml = function rowFlagsHtml(entry) {
@@ -197,6 +215,7 @@ MI.views.renderCandidateRow = function renderCandidateRow(entry, opts) {
       </td>
       <td class="row-location">${[entry.location && entry.location.city, entry.country].filter(Boolean).join(", ")}</td>
       <td><div class="score-badge score-badge-sm ${entry.band}"><span class="n">${entry.score}</span></div></td>
+      <td class="row-rerank-cell">${MI.views.rerankCellHtml(entry, opts.rerankMap)}</td>
       <td class="row-flags-cell">${MI.views.rowFlagsHtml(entry)}</td>
     </tr>`;
 };
@@ -220,7 +239,10 @@ MI.views.wireApproveCheckboxes = function wireApproveCheckboxes() {
 
 MI.views.renderCandidateList = function renderCandidateList(result) {
   MI.el("filtered-out-line").textContent = `filtered out: ${result.filtered_out.length}`;
-  const opts = { showCheckbox: false, analyses: MI.state.analyses, shortlistIds: MI.state.shortlistIds, sessionId: MI.state.sessionId };
+  const opts = {
+    showCheckbox: false, analyses: MI.state.analyses, shortlistIds: MI.state.shortlistIds, sessionId: MI.state.sessionId,
+    rerankMap: MI.views.rerankMap(MI.state.rerankResult),
+  };
   MI.el("candidate-table-body").innerHTML = result.ranked.map((e) => MI.views.renderCandidateRow(e, opts)).join("");
   if (result.insufficient_data.length) {
     MI.el("insufficient-strip").classList.remove("hidden");
@@ -247,11 +269,11 @@ MI.views.onConfirmScore = async function onConfirmScore() {
 
 /* ---------- analysis (row status text streams as each candidate completes) ---------- */
 
-MI.views.highlightEvidence = function highlightEvidence(text, evidence) {
+MI.views.highlightEvidence = function highlightEvidence(text, evidence, tone) {
   if (!text) return "";
   const idx = text.toLowerCase().indexOf(evidence.toLowerCase());
   if (idx === -1) return text;
-  return text.slice(0, idx) + `<mark>${text.slice(idx, idx + evidence.length)}</mark>` + text.slice(idx + evidence.length);
+  return text.slice(0, idx) + `<mark class="mark-${tone || "good"}">${text.slice(idx, idx + evidence.length)}</mark>` + text.slice(idx + evidence.length);
 };
 
 MI.views.updateRowStatus = function updateRowStatus(candidateId, text) {
@@ -283,17 +305,27 @@ MI.views.analyzeAll = async function analyzeAll(ranked) {
 
 /* ---------- reranker ---------- */
 
+function setRerankPill(text, tone) {
+  const line = MI.el("rerank-summary-line");
+  line.textContent = text;
+  line.className = `rerank-pill ${tone}`;
+}
+
 MI.views.onRerank = async function onRerank(ranked) {
+  setRerankPill("Getting reranker second opinion…", "pending");
   let result;
   try {
     result = await MI.api("rerank", { role_id: MI.state.roleId, top_ids: ranked.map((e) => e.candidate_id), rubric: MI.state.rubric });
   } catch (err) {
-    MI.el("rerank-summary-line").textContent = `${MI.views.actionErrorMessage(err)} (reranker second opinion unavailable — ranked order above still stands)`;
+    setRerankPill(`${MI.views.actionErrorMessage(err)} (reranker second opinion unavailable — ranked order above still stands)`, "error");
     return;
   }
   MI.state.rerankResult = result;
   MI.storage.updateSession({ status: "reranked", rerank: result });
-  MI.el("rerank-summary-line").textContent = result.disagreements.length
-    ? `Reranker: ${result.disagreements.length} disagreement(s) — see candidate details`
-    : "Reranker agrees with the deterministic order";
+  const n = result.disagreements.length;
+  setRerankPill(
+    n ? `Reranker second opinion: ${n} disagreement${n === 1 ? "" : "s"} — marked ↕ below` : "Reranker second opinion: agrees with the deterministic order",
+    n ? "disagree" : "agree",
+  );
+  MI.views.renderCandidateList(MI.state.scoreResult);
 };

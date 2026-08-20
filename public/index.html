@@ -88,6 +88,7 @@
     <section id="view-sourcing" class="view">
       <header class="view-header">
         <div class="role-switcher-wrap">
+          <span class="section-label role-switcher-label">Role</span>
           <button id="role-switcher" class="role-switcher role-switcher-lg" type="button">
             <span class="role-switcher-badge" aria-hidden="true">R</span>
             <span class="role-switcher-title" id="role-switcher-title">Select role</span>
@@ -125,12 +126,12 @@
         <div class="view-subheader">
           <h2>Ranked candidates</h2>
           <span id="filtered-out-line" class="text-muted"></span>
-          <span id="rerank-summary-line" class="text-muted"></span>
+          <span id="rerank-summary-line" class="rerank-pill"></span>
         </div>
         <div class="table-wrap">
           <table class="candidate-table">
             <thead>
-              <tr><th>Shortlist</th><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th></tr>
+              <tr><th>Shortlist</th><th>Candidate</th><th>Location</th><th>Score</th><th>Rerank</th><th>Flags</th></tr>
             </thead>
             <tbody id="candidate-table-body"></tbody>
           </table>
@@ -147,6 +148,7 @@
       <header class="view-header">
         <h1>Shortlist</h1>
         <div class="role-switcher-wrap">
+          <span class="section-label role-switcher-label">Role</span>
           <button id="shortlist-role-switcher" class="role-switcher" type="button">
             <span class="role-switcher-badge" aria-hidden="true">R</span>
             <span class="role-switcher-title" id="shortlist-role-switcher-title">Select role</span>
@@ -179,7 +181,7 @@
         <div class="table-wrap">
           <table class="candidate-table">
             <thead>
-              <tr><th>Shortlist</th><th>Approve</th><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th></tr>
+              <tr><th>Shortlist</th><th>Approve</th><th>Candidate</th><th>Location</th><th>Score</th><th>Rerank</th><th>Flags</th></tr>
             </thead>
             <tbody id="shortlist-table-body"></tbody>
           </table>

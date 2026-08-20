@@ -60,6 +60,7 @@ body {
 
 /* ---------- role switcher (used standalone in Sourcing/Shortlist view headers) ---------- */
 .role-switcher-wrap { position: relative; display: inline-block; width: 280px; max-width: 100%; }
+.role-switcher-label { display: block; margin-bottom: .35rem; }
 .role-switcher {
   width: 100%; display: flex; align-items: center; gap: .5rem;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-s);
@@ -260,6 +261,7 @@ th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(-
 .row-headline { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
 .row-location { color: var(--text-2); font-size: 12px; white-space: nowrap; }
 .row-flags-cell { max-width: 200px; }
+.row-rerank-cell { text-align: center; white-space: nowrap; }
 .row-status { font-size: 12px; color: var(--text-3); white-space: nowrap; }
 
 /* ---------- candidate list / cards ---------- */
@@ -295,14 +297,50 @@ th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(-
 .chip-exact { border-color: #bbf0cd; background: var(--green-bg); color: var(--green); }
 .chip-alias { border-color: #bfdbfe; background: var(--accent-bg); color: var(--accent); }
 .chip-semantic { border-color: #ddd6fe; background: var(--violet-bg); color: var(--violet); }
+.chip-good { border-color: #bbf0cd; background: var(--green-bg); color: var(--green); }
+.chip-bad { border-color: #f8c9c5; background: var(--red-bg); color: var(--red); }
 
+/* ---------- favorability highlighting (drawer overlaps/gaps, D-72) ---------- */
+.mark-good, .mark-warn, .mark-bad { border-radius: 3px; padding: 0 3px; }
+.mark-good { background: var(--green-bg); color: var(--green); }
+.mark-warn { background: var(--amber-bg); color: var(--amber); }
+.mark-bad { background: var(--red-bg); color: var(--red); }
 
-/* ---------- reranker disagreement badge ---------- */
+ul.tone-list { list-style: none; padding-left: 0; }
+ul.tone-list li { position: relative; padding-left: 1rem; }
+ul.tone-list li::before {
+  content: ""; position: absolute; left: 0; top: .5em;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--text-3);
+}
+ul.tone-list li.evidence-good::before { background: var(--green); }
+ul.tone-list li.evidence-warn::before { background: var(--amber); }
+ul.tone-list li.evidence-bad::before { background: var(--red); }
+
+.data-flags-warn { color: var(--amber); }
+
+.subscore-bar-fill.tone-good { background: var(--green); }
+.subscore-bar-fill.tone-warn { background: var(--amber); }
+.subscore-bar-fill.tone-bad { background: var(--red); }
+
+/* ---------- reranker disagreement badge (drawer) ---------- */
 .rerank-badge {
   display: block; background: var(--violet-bg); color: var(--violet); border-radius: var(--radius-s);
   padding: .55rem .75rem; font-size: 12.5px; margin-bottom: .5rem;
 }
 .rerank-badge strong { color: var(--violet); }
+
+/* ---------- reranker second-opinion status pill + row badge (D-72) ---------- */
+.rerank-pill {
+  display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+}
+.rerank-pill:empty { display: none; }
+.rerank-pill.pending { background: var(--bg); color: var(--text-2); }
+.rerank-pill.agree { background: var(--green-bg); color: var(--green); }
+.rerank-pill.disagree { background: var(--violet-bg); color: var(--violet); }
+.rerank-pill.error { background: var(--amber-bg); color: var(--amber); }
+
+.rerank-move-badge { background: var(--violet-bg); color: var(--violet); cursor: help; }
 
 /* ---------- candidate card action row ---------- */
 .candidate-action-row { display: flex; align-items: center; gap: .6rem; margin-top: .75rem; }
