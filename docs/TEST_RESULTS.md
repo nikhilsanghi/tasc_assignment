@@ -455,3 +455,99 @@ status: green · gate: approved 2026-08-20
 ```
 
 **Reading the four-fifths table honestly:** nearly every country is flagged for nearly every role. This is expected and stated plainly, not a bug: at `top_k=10` against pools of tens of candidates per country, selection-rate denominators are tiny, so the four-fifths ratio is extremely noisy — this is the labeled **demonstration** the brief calls for ("production runs this on lawfully collected demographic data"), not a real adverse-impact audit. The mechanism is real and correctly implemented (verified by the 3 hand-built cases in `test_four_fifths_flag_logic`); what it can honestly measure on 120 rows split across 6 countries at n=10 is limited, and the report says so.
+
+## Phase 8 — product UI (PIN-inspired redesign)
+status: green · gate: approved 2026-08-20
+
+Frontend-only phase (`public/` + one authorized one-line addition to `scripts/dev_server.py`'s static whitelist, D-60). No `core/`/`api/`/`tests/`/`data/`/`prompts/` changes; `pytest -q` staying at 136 passed is itself evidence of that. No `TEST_PLAN.md` IDs are defined for this phase (it's PRD-governed, not brief-governed) — the checklist below is the manual evidence the PRD's gate (§11) calls for.
+
+| ID | Status | Evidence |
+|---|---|---|
+| P8-M1 functional floor intact | green | Every item in PRD §1.3 re-verified in the new UI: access-code gate (incl. re-prompt on wrong code) → role picker → guidance → Compile → echo-back (interpretation/ops/adjustments/rejections, policy-violation vs not-supported styled differently) → Confirm & score → ranked cards + insufficient-data strip → analyst streaming (first alone, then pool of 4, D-26 unchanged) → reranker disagreement badges → checkbox approve → Approve & Export → markdown preview + `.md`/`audit.json` downloads. 429 retry-after path unchanged (`MI.api` verbatim). |
+| P8-M2 shell + design system | green | Sidebar (brand, role switcher listing all 10 roles, nav w/ count badges, DEMO chip), restyled access overlay, criteria bar (edit ⇄ compact-summary states), all screenshotted and compared against `private/Pin_Screenshots/` at every step. |
+| P8-M3 candidate cards | green | Avatar (deterministic gradient), score badge, subscore bars, tier-annotated skill chips (`exact`/`alias`/`semantic ~0.NN`), flags + dup badge, profile row — verified against real R001 and R004 data. |
+| P8-M4 detail drawer | green | Opens from a card's "Details →" (enabled only once that candidate's analysis is ready); ↑/↓ navigates the ranked list, Esc and overlay-click close it; full subscore decomposition, boosts/penalties fired (rendered from the real `{concept, evidence:[{field,term,snippet}]}` shape — see bug below), dup-group conflict table, full analyst output, reranker verdict all present. |
+| P8-M5 shortlist flow | green | Shortlist button toggles state, shows an undo toast, updates the sidebar count; Shortlist view lists shortlisted candidates with their own approve checkboxes (shared `approvedIds` state with Sourcing) and an independent Approve & Export entry point; "Nothing is exported without your explicit approval" note present. |
+| P8-M6 auto-saved searches | green | Every compile starts a new `mi_sessions_v1` session; writes observed after compile, score, each analyze, rerank, approval toggle, and export. Searches view lists sessions and re-renders a selected one read-only from stored data with **zero** API calls (verified via network log while browsing a saved session); "Re-run this search" resets the Sourcing UI and prefills guidance; Delete works with confirmation. |
+| P8-M7 reports | green | "Download session trace (JSON)" works for any session; "Download audit.json" / "Download shortlist.md" appear only once a session's status is `exported` and download the real approved artifacts, not the draft trace. |
+| P8-M8 outreach demo | green | Banner states plainly nothing is sent; sequence/branches/add-step menu (7 PIN-labeled options, all inert with "Not in scope — integration point" tooltip) render; candidate picker sources from the live shortlist; step body is deterministic template fill (`{{candidate_id}}`/`{{role_title}}`/`{{top_overlap}}`) rendered as violet chips — no LLM call, no network call (confirmed via network log), no invented names. Empty state when nothing is shortlisted. |
+| P8-M9 overview | green | Stat cards (searches run, candidates analyzed, exports made, last cache-read tokens) and a 5-row recent-updates list, both computed purely from `mi_sessions_v1` — matched by hand against the session count/status shown in Searches. |
+| P8-M10 role-switch confirm | green | Switching roles mid-session prompts `confirm()`; Cancel leaves the role and in-progress session untouched, OK resets the Sourcing UI and clears `sessionId` — verified by mocking `window.confirm` for both branches. |
+| P8-M11 polish | green | Focus-visible outlines added for buttons/nav-items/chips/links; every icon-only button already carried `aria-label` (drawer nav/close, criteria-edit), decorative SVGs now `aria-hidden="true"`; inline error surfaces added for compile/score/rerank/export failures (429/502/400 messages), previously silent. |
+
+**Two required end-to-end runs (PRD §10 step 6):**
+1. **R004 (Data Analyst), guidance `"prioritize immediate availability; A/B testing matters a lot"`** — full click-through: compile (echo correctly describes the availability reweight + A/B promotion to required+boosted, 4 ops accepted, none rejected) → score (C101 rose to top with a real `a/b testing emphasis` boost) → all 10 analyses streamed with skeletons → reranker agreed with the deterministic order → shortlisted C101, opened its drawer (boosts fired, 3-way dup-conflict table for `{C031,C101,C117}`) → approved + exported (markdown correctly named the embedded-injection flag found in the profile data) → Searches/Reports/Overview all reflected the new session immediately.
+2. **Empty guidance (default rubric)** — re-run repeatedly across steps 1–5 on R001 (Backend Engineer): compile shows `interpretation: "default"`, 0 ops; full score → analyze (pool of 4) → rerank → export cycle completed cleanly each time with no console errors.
+
+**Gate-procedure note:** running `pytest -q -m live` regenerates `prompts/examples/*.json` (live LLM output is non-deterministic run-to-run) and appends to `tests/golden/groundedness_runs.jsonl` / rewrites `tests/golden/export_R004_live.md` as a side effect of earlier phases' test design — all three paths are on Phase 8's no-touch list (`prompts/`, `tests/`). Reverted with `git checkout --` after the live run so the diff stays scoped to `public/`/`docs/`/`CLAUDE.md`; re-ran `pytest -q` after reverting to confirm nothing else depended on the regenerated content.
+
+**Post-initial-build revisions, found during Owner review (D-65–D-73), verified before final gate approval:**
+
+| ID | Status | Evidence |
+|---|---|---|
+| P8-M12 selection-mechanism consolidation | green | D-65: Sourcing's checkbox + Shortlist's separate button (two parallel "I care about this candidate" mechanisms) collapsed to one — Shortlist only, with approve as its own explicit step in the Shortlist view. |
+| P8-M13 role-scoped shortlists | green | D-66: `shortlist_ids` added to the session schema; Shortlist gained its own independent role selector reading the newest session per role from `localStorage`; verified two different roles keep two different shortlists. |
+| P8-M14 native-dialog replacement | green | D-70: both native `confirm()` calls (role switch, delete search) replaced with `MI.confirmModal` — verified both branches (confirm/cancel) work without the silent no-op the native dialogs had. |
+| P8-M15 shortlist checkbox persistence bug | green | D-69: Shortlist table's approve checkbox was missing `data-session-id`, so `approved_ids` never actually updated despite the box visually toggling — caught by running the real checkbox→export flow and seeing the export claim 0 approved candidates; fixed and re-verified end to end. |
+| P8-M16 shortlist carry-forward | green | D-71: re-compiling the same role now carries the prior session's `shortlist_ids` forward instead of silently orphaning it — verified by re-compiling R001 twice and confirming the shortlist survived. |
+| P8-M17 role selector labeling | green | D-72: a "Role" label added above both the Sourcing and Shortlist role switchers — Sourcing had no page heading at all, and Shortlist's own `<h1>Shortlist</h1>` sat directly above its switcher with nothing naming the control itself. Verified live in-browser on both views. |
+| P8-M18 favorability highlighting | green | D-72: green/amber/red palette (reusing the existing 80/60 score-band cutoffs) applied to subscore bars, drawer overlap/gap evidence (`<mark>` + colored dot), and boosts/penalties chips. Verified live against a real R001 analysis: Location subscore at 40% rendered red, matched overlaps rendered green, `nice_to_have` gaps rendered amber vs. `required` gaps rendered red. |
+| P8-M19 cache-hit pill reworded | green | D-72: "cache hit" → "cached · faster" plus an explanatory tooltip, same underlying `cache_read_input_tokens > 0` condition. Verified live — pill appears on a cached analyst call with the new wording. |
+| P8-M20 reranker visibility | green | D-72/D-73: the rerank summary upgraded from muted text to a colored status pill (pending/agree/disagree); a per-row ↑/↓ badge added in its own dedicated "Rerank" table column (not sharing the "Flags" column) in both Sourcing and Shortlist, showing "—" when the reranker didn't flag that candidate. Verified live: pill correctly cycled pending → agree/green through a real analyze+rerank run; column renders in both tables. |
+
+**Two real bugs found and fixed during this phase's own manual testing** (not by inspection — by actually clicking, per the D-57 lesson this PRD explicitly cites):
+- **Export-gating gap (step 3).** The new Shortlist view's Approve & Export button had no dependency on the rerank step finishing, unlike the original Sourcing `#export-section` (hidden until rerank completes). Exporting from Shortlist before rerank finished sent `rerank: null` and the backend correctly 500'd on the unexpected shape. Fixed by gating both entry points behind the same rerank-completion flag (D-61).
+- **`boosts_fired`/`penalties_fired` rendering (step 6, R004 run).** The drawer rendered `${o.evidence}` assuming a string; the real shape is `{concept, evidence: [{field, term, snippet}]}` (`core/scorer.py::_fire_ops` via `core/skills.py::match_terms`), so it printed `[object Object]`. Fixed by rendering `field: "snippet"` pairs; verified live against R004's real `a/b testing emphasis` boost.
+
+<!-- run log: initial build gate (pre Owner-review revisions) -->
+```
+$ pytest -q
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed, 31 deselected in 1.11s
+
+$ pytest -q -m live
+...............................                                          [100%]
+31 passed, 136 deselected in 248.50s (0:04:08)
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
+```
+
+<!-- run log: closing gate, after D-65–D-73 post-review revisions — 2026-08-20 -->
+```
+$ pytest -q
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed, 31 deselected in 0.74s
+
+$ pytest -q -m live
+...............................                                          [100%]
+31 passed, 136 deselected in 262.01s (0:04:22)
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
+
+$ git diff main --stat
+ CLAUDE.md               |   1 +
+ README.md               |   4 +
+ docs/DECISIONS.md       |  14 ++
+ docs/TEST_RESULTS.md    |  64 ++++++
+ docs/UI_REDESIGN_PRD.md | 140 +++++++++++++
+ public/app.js           | 404 +++++++++++++++++++-------------------
+ public/drawer.js        | 267 +++++++++++++++++++++++++
+ public/extras.js        | 341 ++++++++++++++++++++++++++++++++
+ public/index.html       | 356 +++++++++++++++++++++++++++------
+ public/styles.css       | 512 +++++++++++++++++++++++++++++++++++++++---------
+ public/views.js         | 331 +++++++++++++++++++++++++++++++
+ scripts/dev_server.py   |   2 +-  (D-60, Owner-authorized static-whitelist addition)
+ 12 files changed, 2080 insertions(+), 356 deletions(-)
+```
+
+`prompts/examples/*.json`, `tests/golden/export_R004_live.md`, and `tests/golden/groundedness_runs.jsonl` were regenerated as a side effect of each `pytest -q -m live` run above (see the gate-procedure note further up) and reverted with `git checkout --` before the respective diff was taken.
