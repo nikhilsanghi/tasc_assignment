@@ -229,6 +229,7 @@ MI.drawer.onExport = async function onExport() {
     },
   };
   const result = await MI.api("export", body);
+  MI.storage.updateSession({ status: "exported", export: { markdown: result.markdown, audit_json: result.audit_json } });
   paintExportOutput("", result);
   paintExportOutput("shortlist-", result);
 };

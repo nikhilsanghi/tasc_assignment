@@ -34,15 +34,38 @@ MI.views.renderCriteriaBar = function renderCriteriaBar(result) {
   MI.el("criteria-count-pill").textContent = `+${result.ops_accepted.length} criteria`;
 };
 
+/* ---------- session reset (new compile or role switch) ---------- */
+
+MI.views.resetSourcingUI = function resetSourcingUI() {
+  MI.state.rubric = null; MI.state.scoreResult = null; MI.state.analyses = {};
+  MI.state.rerankResult = null; MI.state.approvedIds = new Set(); MI.state.shortlistIds = new Set();
+  MI.state.compiledAt = null; MI.state.approvedAt = null; MI.state.rejected = []; MI.state.adjustments = [];
+  MI.state.guidance = ""; MI.state.sessionId = null;
+  MI.el("guidance-input").value = "";
+  MI.el("criteria-bar").classList.add("editing");
+  ["echo-section", "score-section", "cards-section", "rerank-section", "export-section"].forEach((id) => MI.el(id).classList.add("hidden"));
+  MI.el("candidate-list").innerHTML = "";
+  MI.el("analyst-cards").innerHTML = "";
+  MI.el("insufficient-strip").classList.add("hidden");
+  MI.el("export-output").classList.add("hidden");
+  MI.drawer.updateShortlistCount();
+};
+
 /* ---------- compile / echo-back ---------- */
 
 MI.views.onCompile = async function onCompile() {
   MI.state.guidance = MI.el("guidance-input").value;
   const result = await MI.api("compile_rubric", { role_id: MI.state.roleId, guidance: MI.state.guidance });
+  const role = MI.state.roles.find((r) => r.role_id === MI.state.roleId);
+  MI.storage.startSession(MI.state.roleId, role.title, MI.state.guidance);
   MI.state.rubric = result.rubric;
   MI.state.rejected = result.rejected;
   MI.state.adjustments = result.adjustments;
   MI.state.compiledAt = new Date().toISOString();
+  MI.storage.updateSession({
+    status: "compiled", rubric: result.rubric,
+    compile: { interpretation: result.interpretation, ops_accepted: result.ops_accepted, rejected: result.rejected, adjustments: result.adjustments },
+  });
   MI.views.renderCriteriaBar(result);
   MI.views.renderEcho(result);
   MI.el("echo-section").classList.remove("hidden");
@@ -157,6 +180,10 @@ MI.views.wireApproveCheckboxes = function wireApproveCheckboxes() {
     cb.addEventListener("change", (ev) => {
       if (ev.target.checked) MI.state.approvedIds.add(ev.target.dataset.id);
       else MI.state.approvedIds.delete(ev.target.dataset.id);
+      const patch = { approved_ids: Array.from(MI.state.approvedIds) };
+      const current = MI.storage.getSession(MI.state.sessionId);
+      if (current && current.status === "reranked" && MI.state.approvedIds.size > 0) patch.status = "approved";
+      MI.storage.updateSession(patch);
     });
   });
 };
@@ -176,6 +203,10 @@ MI.views.onConfirmScore = async function onConfirmScore() {
   MI.el("shortlist-export-wait").classList.remove("hidden");
   const result = await MI.api("score", { role_id: MI.state.roleId, rubric: MI.state.rubric });
   MI.state.scoreResult = result;
+  MI.storage.updateSession({
+    status: "scored",
+    score: { ranked: result.ranked, insufficient_data: result.insufficient_data, filtered_out: result.filtered_out, pool_countries: result.pool_countries },
+  });
   MI.views.renderCandidateList(result);
   MI.el("score-section").classList.remove("hidden");
   await MI.views.analyzeAll(result.ranked);
@@ -251,6 +282,7 @@ MI.views.analyzeOne = async function analyzeOne(entry) {
   try {
     const result = await MI.api("analyze", { role_id: MI.state.roleId, candidate_id: entry.candidate_id, rubric: MI.state.rubric });
     MI.state.analyses[entry.candidate_id] = result;
+    MI.storage.updateSession({ status: "analyzed", analyses: MI.state.analyses });
     MI.views.renderCard(entry, result);
     MI.views.markDetailsReady(entry.candidate_id);
     return result;
@@ -275,6 +307,7 @@ MI.views.analyzeAll = async function analyzeAll(ranked) {
 MI.views.onRerank = async function onRerank(ranked) {
   const result = await MI.api("rerank", { role_id: MI.state.roleId, top_ids: ranked.map((e) => e.candidate_id), rubric: MI.state.rubric });
   MI.state.rerankResult = result;
+  MI.storage.updateSession({ status: "reranked", rerank: result });
   MI.el("rerank-section").classList.remove("hidden");
   MI.el("rerank-disagreements").innerHTML = result.disagreements.length
     ? result.disagreements.map((d) => `<span class="rerank-badge"><strong>${d.candidate_id}</strong>: det #${d.det_rank} → llm #${d.llm_rank} — ${d.rationale}</span>`).join("")

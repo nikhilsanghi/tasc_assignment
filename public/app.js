@@ -5,7 +5,7 @@ MI.state = {
   accessCode: null, roles: [], roleId: null, rubric: null, scoreResult: null,
   analyses: {}, rerankResult: null, approvedIds: new Set(), shortlistIds: new Set(),
   compiledAt: null, approvedAt: null, rejected: [], adjustments: [], guidance: "",
-  view: "sourcing", drawerCandidateId: null,
+  view: "sourcing", drawerCandidateId: null, sessionId: null,
 };
 
 MI.el = function el(id) { return document.getElementById(id); };
@@ -57,6 +57,82 @@ MI.pool = function pool(tasks, n = 4) {
   });
 };
 
+/* ---------- auto-save (D-6x: client-side session persistence) ---------- */
+
+MI.storage = { KEY: "mi_sessions_v1", CAP: 20 };
+
+MI.storage.load = function load() {
+  try {
+    const raw = localStorage.getItem(MI.storage.KEY);
+    return raw ? JSON.parse(raw) : { sessions: {}, order: [] };
+  } catch (e) {
+    return { sessions: {}, order: [] };
+  }
+};
+
+MI.storage.save = function save(store, retried = false) {
+  try {
+    localStorage.setItem(MI.storage.KEY, JSON.stringify(store));
+  } catch (e) {
+    if (retried || !store.order.length) return;
+    const evicted = store.order.pop();
+    delete store.sessions[evicted];
+    MI.drawer.showToast("History full — oldest search dropped");
+    MI.storage.save(store, true);
+  }
+};
+
+MI.storage.startSession = function startSession(roleId, roleTitle, guidance) {
+  const store = MI.storage.load();
+  const id = `sess_${Date.now()}`;
+  const now = new Date().toISOString();
+  const session = {
+    id, created_at: now, updated_at: now, role_id: roleId, role_title: roleTitle, guidance,
+    status: "compiled", rubric: null, compile: null, score: null, analyses: {},
+    rerank: null, approved_ids: [], export: null,
+  };
+  store.sessions[id] = session;
+  store.order.unshift(id);
+  while (store.order.length > MI.storage.CAP) {
+    const evicted = store.order.pop();
+    delete store.sessions[evicted];
+  }
+  MI.storage.save(store);
+  MI.state.sessionId = id;
+  MI.storage.updateSearchesCount();
+  return id;
+};
+
+MI.storage.updateSearchesCount = function updateSearchesCount() {
+  MI.el("count-searches").textContent = MI.storage.load().order.length;
+};
+
+MI.storage.updateSession = function updateSession(patch) {
+  if (!MI.state.sessionId) return;
+  const store = MI.storage.load();
+  const session = store.sessions[MI.state.sessionId];
+  if (!session) return;
+  Object.assign(session, patch, { updated_at: new Date().toISOString() });
+  MI.storage.save(store);
+};
+
+MI.storage.listSessions = function listSessions() {
+  const store = MI.storage.load();
+  return store.order.map((id) => store.sessions[id]).filter(Boolean);
+};
+
+MI.storage.getSession = function getSession(id) {
+  return MI.storage.load().sessions[id] || null;
+};
+
+MI.storage.deleteSession = function deleteSession(id) {
+  const store = MI.storage.load();
+  delete store.sessions[id];
+  store.order = store.order.filter((sid) => sid !== id);
+  MI.storage.save(store);
+  MI.storage.updateSearchesCount();
+};
+
 const VIEWS = ["overview", "sourcing", "shortlist", "searches", "outreach", "reports"];
 
 MI.router = {
@@ -75,6 +151,9 @@ MI.router = {
     document.querySelectorAll(".nav-item").forEach((a) => {
       a.classList.toggle("active", a.dataset.view === view);
     });
+    if (view === "searches") MI.extras.renderSearches();
+    if (view === "reports") MI.extras.renderReports();
+    if (view === "overview") MI.extras.renderOverview();
   },
 };
 
@@ -114,11 +193,19 @@ function renderRoleSwitcher() {
   MI.el("role-switcher-title").textContent = current ? current.title : "Select role";
 }
 
-function selectRole(roleId) {
+function selectRole(roleId, skipConfirm) {
+  const role = MI.state.roles.find((r) => r.role_id === roleId);
+  if (!skipConfirm && MI.state.sessionId && roleId !== MI.state.roleId) {
+    if (!confirm(`Start a new search for ${role.title}? Your current search is already auto-saved.`)) {
+      MI.el("role-menu").classList.add("hidden");
+      return;
+    }
+    MI.views.resetSourcingUI();
+  }
   MI.state.roleId = roleId;
   renderRoleSwitcher();
   MI.el("role-menu").classList.add("hidden");
-  MI.el("sourcing-role-title").textContent = MI.state.roles.find((r) => r.role_id === roleId).title;
+  MI.el("sourcing-role-title").textContent = role.title;
 }
 
 function wireRoleSwitcher() {
@@ -137,13 +224,16 @@ function wireRoleSwitcher() {
 async function boot() {
   const health = await MI.api("health", {}, "GET");
   MI.state.roles = health.roles;
-  if (health.roles.length) selectRole(health.roles[0].role_id);
+  if (health.roles.length) selectRole(health.roles[0].role_id, true);
   wireRoleSwitcher();
   MI.el("compile-btn").addEventListener("click", () => MI.views.onCompile());
   MI.el("confirm-score-btn").addEventListener("click", () => MI.views.onConfirmScore());
   MI.el("export-btn").addEventListener("click", () => MI.drawer.onExport());
   MI.views.wireCriteriaBar();
   MI.drawer.wire();
+  MI.extras.wireSearches();
+  MI.extras.wireReports();
+  MI.storage.updateSearchesCount();
   MI.router.init();
 }
 
