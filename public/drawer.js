@@ -91,7 +91,10 @@ function renderFiredOps(label, ops) {
   return `
     <div class="drawer-section">
       <span class="section-label">${label}</span>
-      <div class="chip-row">${ops.map((o) => `<span class="chip">${o.concept} · ${o.evidence}</span>`).join("")}</div>
+      <div class="chip-row">${ops.map((o) => {
+        const snippets = o.evidence.map((e) => `${e.field}: "${e.snippet}"`).join(", ");
+        return `<span class="chip">${o.concept} · ${snippets}</span>`;
+      }).join("")}</div>
     </div>`;
 }
 
@@ -228,7 +231,16 @@ MI.drawer.onExport = async function onExport() {
       decomposition: MI.state.scoreResult.decomposition, compiled_at: MI.state.compiledAt, approved_at: MI.state.approvedAt,
     },
   };
-  const result = await MI.api("export", body);
+  let result;
+  try {
+    result = await MI.api("export", body);
+  } catch (err) {
+    MI.views.showActionError("export-btn", err);
+    MI.views.showActionError("shortlist-export-btn", err);
+    return;
+  }
+  MI.views.clearActionError("export-btn");
+  MI.views.clearActionError("shortlist-export-btn");
   MI.storage.updateSession({ status: "exported", export: { markdown: result.markdown, audit_json: result.audit_json } });
   paintExportOutput("", result);
   paintExportOutput("shortlist-", result);

@@ -20,6 +20,36 @@ MI.views.avatarHtml = function avatarHtml(candidateId) {
 
 const FLAG_ICON = '<svg class="icon subscore-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 9v4M12 17v.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>';
 
+MI.views.actionErrorMessage = function actionErrorMessage(err) {
+  if (err.status === 429) return "Rate limited — please wait a moment and retry.";
+  if (err.status === 502) return "The model returned an unusable response — please retry.";
+  if (err.status === 400) return `Invalid rubric: ${(err.detail && err.detail.detail && err.detail.detail.join(", ")) || "please adjust your guidance."}`;
+  if (err.status === 401) return "Access code no longer valid — reload and re-enter it.";
+  return "Something went wrong — please retry.";
+};
+
+function actionErrorAnchor(anchorId) {
+  const el = MI.el(anchorId);
+  return el.closest(".criteria-bar") || el;
+}
+
+MI.views.showActionError = function showActionError(anchorId, err) {
+  const anchor = actionErrorAnchor(anchorId);
+  let box = anchor.parentElement.querySelector(`.action-error[data-for="${anchorId}"]`);
+  if (!box) {
+    box = document.createElement("p");
+    box.className = "error-text action-error";
+    box.dataset.for = anchorId;
+    anchor.insertAdjacentElement("afterend", box);
+  }
+  box.textContent = MI.views.actionErrorMessage(err);
+};
+
+MI.views.clearActionError = function clearActionError(anchorId) {
+  const box = actionErrorAnchor(anchorId).parentElement.querySelector(`.action-error[data-for="${anchorId}"]`);
+  if (box) box.remove();
+};
+
 /* ---------- criteria bar ---------- */
 
 MI.views.wireCriteriaBar = function wireCriteriaBar() {
@@ -55,20 +85,25 @@ MI.views.resetSourcingUI = function resetSourcingUI() {
 
 MI.views.onCompile = async function onCompile() {
   MI.state.guidance = MI.el("guidance-input").value;
-  const result = await MI.api("compile_rubric", { role_id: MI.state.roleId, guidance: MI.state.guidance });
-  const role = MI.state.roles.find((r) => r.role_id === MI.state.roleId);
-  MI.storage.startSession(MI.state.roleId, role.title, MI.state.guidance);
-  MI.state.rubric = result.rubric;
-  MI.state.rejected = result.rejected;
-  MI.state.adjustments = result.adjustments;
-  MI.state.compiledAt = new Date().toISOString();
-  MI.storage.updateSession({
-    status: "compiled", rubric: result.rubric,
-    compile: { interpretation: result.interpretation, ops_accepted: result.ops_accepted, rejected: result.rejected, adjustments: result.adjustments },
-  });
-  MI.views.renderCriteriaBar(result);
-  MI.views.renderEcho(result);
-  MI.el("echo-section").classList.remove("hidden");
+  try {
+    const result = await MI.api("compile_rubric", { role_id: MI.state.roleId, guidance: MI.state.guidance });
+    MI.views.clearActionError("compile-btn");
+    const role = MI.state.roles.find((r) => r.role_id === MI.state.roleId);
+    MI.storage.startSession(MI.state.roleId, role.title, MI.state.guidance);
+    MI.state.rubric = result.rubric;
+    MI.state.rejected = result.rejected;
+    MI.state.adjustments = result.adjustments;
+    MI.state.compiledAt = new Date().toISOString();
+    MI.storage.updateSession({
+      status: "compiled", rubric: result.rubric,
+      compile: { interpretation: result.interpretation, ops_accepted: result.ops_accepted, rejected: result.rejected, adjustments: result.adjustments },
+    });
+    MI.views.renderCriteriaBar(result);
+    MI.views.renderEcho(result);
+    MI.el("echo-section").classList.remove("hidden");
+  } catch (err) {
+    MI.views.showActionError("compile-btn", err);
+  }
 };
 
 MI.views.renderEcho = function renderEcho(result) {
@@ -201,15 +236,20 @@ MI.views.renderCandidateList = function renderCandidateList(result) {
 MI.views.onConfirmScore = async function onConfirmScore() {
   MI.el("shortlist-export-btn").disabled = true;
   MI.el("shortlist-export-wait").classList.remove("hidden");
-  const result = await MI.api("score", { role_id: MI.state.roleId, rubric: MI.state.rubric });
-  MI.state.scoreResult = result;
-  MI.storage.updateSession({
-    status: "scored",
-    score: { ranked: result.ranked, insufficient_data: result.insufficient_data, filtered_out: result.filtered_out, pool_countries: result.pool_countries },
-  });
-  MI.views.renderCandidateList(result);
-  MI.el("score-section").classList.remove("hidden");
-  await MI.views.analyzeAll(result.ranked);
+  try {
+    const result = await MI.api("score", { role_id: MI.state.roleId, rubric: MI.state.rubric });
+    MI.views.clearActionError("confirm-score-btn");
+    MI.state.scoreResult = result;
+    MI.storage.updateSession({
+      status: "scored",
+      score: { ranked: result.ranked, insufficient_data: result.insufficient_data, filtered_out: result.filtered_out, pool_countries: result.pool_countries },
+    });
+    MI.views.renderCandidateList(result);
+    MI.el("score-section").classList.remove("hidden");
+    await MI.views.analyzeAll(result.ranked);
+  } catch (err) {
+    MI.views.showActionError("confirm-score-btn", err);
+  }
 };
 
 /* ---------- analyst cards (skeleton while streaming) ---------- */
@@ -305,7 +345,14 @@ MI.views.analyzeAll = async function analyzeAll(ranked) {
 /* ---------- reranker ---------- */
 
 MI.views.onRerank = async function onRerank(ranked) {
-  const result = await MI.api("rerank", { role_id: MI.state.roleId, top_ids: ranked.map((e) => e.candidate_id), rubric: MI.state.rubric });
+  let result;
+  try {
+    result = await MI.api("rerank", { role_id: MI.state.roleId, top_ids: ranked.map((e) => e.candidate_id), rubric: MI.state.rubric });
+  } catch (err) {
+    MI.el("rerank-section").classList.remove("hidden");
+    MI.el("rerank-disagreements").innerHTML = `<p class="error-text">${MI.views.actionErrorMessage(err)} The ranked order above still stands — only the reranker's second opinion is missing.</p>`;
+    return;
+  }
   MI.state.rerankResult = result;
   MI.storage.updateSession({ status: "reranked", rerank: result });
   MI.el("rerank-section").classList.remove("hidden");
