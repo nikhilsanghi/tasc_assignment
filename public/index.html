@@ -130,7 +130,7 @@
         <div class="table-wrap">
           <table class="candidate-table">
             <thead>
-              <tr><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th><th></th></tr>
+              <tr><th>Shortlist</th><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th></tr>
             </thead>
             <tbody id="candidate-table-body"></tbody>
           </table>
@@ -179,19 +179,21 @@
         <div class="table-wrap">
           <table class="candidate-table">
             <thead>
-              <tr><th></th><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th><th></th></tr>
+              <tr><th>Shortlist</th><th>Approve</th><th>Candidate</th><th>Location</th><th>Score</th><th>Flags</th></tr>
             </thead>
             <tbody id="shortlist-table-body"></tbody>
           </table>
         </div>
         <section class="card">
-          <button id="shortlist-export-btn" class="btn btn-primary" disabled>Approve &amp; export</button>
-          <p id="shortlist-export-wait" class="text-muted">This search hasn't finished analysis + reranking yet.</p>
-          <div id="shortlist-export-output" class="hidden">
-            <div id="shortlist-markdown-preview"></div>
-            <button id="shortlist-download-md-btn" class="btn btn-secondary">Download .md</button>
-            <button id="shortlist-download-audit-btn" class="btn btn-secondary">Download audit.json</button>
+          <span class="section-label">Export</span>
+          <div class="export-actions">
+            <button id="shortlist-export-btn" class="btn btn-primary" disabled>Approve &amp; export</button>
+            <div id="shortlist-export-output" class="export-downloads hidden">
+              <button id="shortlist-download-md-btn" class="btn btn-secondary"></button>
+              <button id="shortlist-download-audit-btn" class="btn btn-secondary"></button>
+            </div>
           </div>
+          <p id="shortlist-export-wait" class="text-muted">This search hasn't finished analysis + reranking yet.</p>
         </section>
       </div>
     </section>
@@ -292,6 +294,15 @@
   <div id="toast" class="toast hidden" role="status">
     <span id="toast-message"></span>
     <button id="toast-undo" class="btn-ghost btn-sm hidden" type="button">Undo</button>
+  </div>
+
+  <div id="confirm-modal-overlay" class="drawer-overlay hidden"></div>
+  <div id="confirm-modal" class="confirm-modal hidden" role="alertdialog" aria-modal="true">
+    <p id="confirm-modal-message"></p>
+    <div class="confirm-modal-actions">
+      <button id="confirm-modal-cancel" class="btn btn-secondary" type="button">Cancel</button>
+      <button id="confirm-modal-ok" class="btn btn-primary" type="button">Confirm</button>
+    </div>
   </div>
 </div>
 

@@ -17,6 +17,31 @@ MI.showTransientMessage = function showTransientMessage(text) {
   setTimeout(() => line.classList.add("hidden"), 4000);
 };
 
+MI.confirmModal = function confirmModal(message, okLabel) {
+  return new Promise((resolve) => {
+    MI.el("confirm-modal-message").textContent = message;
+    MI.el("confirm-modal-ok").textContent = okLabel || "Confirm";
+    MI.el("confirm-modal-overlay").classList.remove("hidden");
+    MI.el("confirm-modal").classList.remove("hidden");
+    const okBtn = MI.el("confirm-modal-ok");
+    const cancelBtn = MI.el("confirm-modal-cancel");
+    const overlay = MI.el("confirm-modal-overlay");
+    const cleanup = (result) => {
+      MI.el("confirm-modal-overlay").classList.add("hidden");
+      MI.el("confirm-modal").classList.add("hidden");
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+      overlay.removeEventListener("click", onCancel);
+      resolve(result);
+    };
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    okBtn.addEventListener("click", onOk);
+    cancelBtn.addEventListener("click", onCancel);
+    overlay.addEventListener("click", onCancel);
+  });
+};
+
 MI.api = async function api(name, body, method = "POST", retried = false) {
   const headers = { "Content-Type": "application/json", "X-Access-Code": MI.state.accessCode };
   const opts = { method, headers };
@@ -86,10 +111,12 @@ MI.storage.startSession = function startSession(roleId, roleTitle, guidance) {
   const store = MI.storage.load();
   const id = `sess_${Date.now()}`;
   const now = new Date().toISOString();
+  const priorId = store.order.find((sid) => store.sessions[sid].role_id === roleId);
+  const carriedShortlist = priorId ? (store.sessions[priorId].shortlist_ids || []) : [];
   const session = {
     id, created_at: now, updated_at: now, role_id: roleId, role_title: roleTitle, guidance,
     status: "compiled", rubric: null, compile: null, score: null, analyses: {},
-    rerank: null, approved_ids: [], shortlist_ids: [], export: null,
+    rerank: null, approved_ids: [], shortlist_ids: carriedShortlist, export: null,
   };
   store.sessions[id] = session;
   store.order.unshift(id);
@@ -199,18 +226,16 @@ function renderRoleSwitcher() {
   MI.el("role-switcher-title").textContent = current ? current.title : "Select role";
 }
 
-function selectRole(roleId, skipConfirm) {
+async function selectRole(roleId, skipConfirm) {
   const role = MI.state.roles.find((r) => r.role_id === roleId);
+  MI.el("role-menu").classList.add("hidden");
   if (!skipConfirm && MI.state.sessionId && roleId !== MI.state.roleId) {
-    if (!confirm(`Start a new search for ${role.title}? Your current search is already auto-saved.`)) {
-      MI.el("role-menu").classList.add("hidden");
-      return;
-    }
+    const ok = await MI.confirmModal(`Start a new search for ${role.title}? Your current search is already auto-saved.`, "Start new search");
+    if (!ok) return;
     MI.views.resetSourcingUI();
   }
   MI.state.roleId = roleId;
   renderRoleSwitcher();
-  MI.el("role-menu").classList.add("hidden");
 }
 
 function wireRoleSwitcher() {

@@ -88,7 +88,9 @@ MI.views.onCompile = async function onCompile() {
     const result = await MI.api("compile_rubric", { role_id: MI.state.roleId, guidance: MI.state.guidance });
     MI.views.clearActionError("compile-btn");
     const role = MI.state.roles.find((r) => r.role_id === MI.state.roleId);
-    MI.storage.startSession(MI.state.roleId, role.title, MI.state.guidance);
+    const newSessionId = MI.storage.startSession(MI.state.roleId, role.title, MI.state.guidance);
+    MI.state.shortlistIds = new Set(MI.storage.getSession(newSessionId).shortlist_ids || []);
+    MI.drawer.updateShortlistCount();
     MI.state.rubric = result.rubric;
     MI.state.rejected = result.rejected;
     MI.state.adjustments = result.adjustments;
@@ -164,7 +166,9 @@ MI.views.rowFlagsHtml = function rowFlagsHtml(entry) {
 };
 
 MI.views.shortlistButtonHtml = function shortlistButtonHtml(candidateId, shortlisted, sessionId, labeled) {
-  const icon = `<svg class="icon" viewBox="0 0 24 24" fill="${shortlisted ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>`;
+  const icon = shortlisted
+    ? `<svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    : `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>`;
   if (labeled) {
     return `<button type="button" class="btn btn-secondary btn-sm btn-shortlist${shortlisted ? " active" : ""}" data-id="${candidateId}" data-session-id="${sessionId}">${icon} ${shortlisted ? "Shortlisted" : "Shortlist"}</button>`;
   }
@@ -180,6 +184,7 @@ MI.views.renderCandidateRow = function renderCandidateRow(entry, opts) {
     ? `<td><input type="checkbox" class="approve-cb" data-id="${entry.candidate_id}" data-session-id="${opts.sessionId}" aria-label="Approve ${entry.candidate_id}"></td>` : "";
   return `
     <tr class="candidate-row" data-id="${entry.candidate_id}">
+      <td>${MI.views.shortlistButtonHtml(entry.candidate_id, opts.shortlistIds.has(entry.candidate_id), opts.sessionId)}</td>
       ${checkboxCell}
       <td>
         <div class="row-id-cell">
@@ -193,7 +198,6 @@ MI.views.renderCandidateRow = function renderCandidateRow(entry, opts) {
       <td class="row-location">${[entry.location && entry.location.city, entry.country].filter(Boolean).join(", ")}</td>
       <td><div class="score-badge score-badge-sm ${entry.band}"><span class="n">${entry.score}</span></div></td>
       <td class="row-flags-cell">${MI.views.rowFlagsHtml(entry)}</td>
-      <td>${MI.views.shortlistButtonHtml(entry.candidate_id, opts.shortlistIds.has(entry.candidate_id), opts.sessionId)}</td>
     </tr>`;
 };
 

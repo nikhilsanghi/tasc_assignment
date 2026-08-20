@@ -176,11 +176,12 @@ MI.extras.wireSearches = function wireSearches() {
     if (openBtn) MI.extras.renderSessionDetail(openBtn.dataset.id);
     const delBtn = ev.target.closest(".btn-delete-session");
     if (delBtn) {
-      if (confirm("Delete this saved search? This only removes the local trace, not any approved export already downloaded.")) {
+      MI.confirmModal("Delete this saved search? This only removes the local trace, not any approved export already downloaded.", "Delete").then((ok) => {
+        if (!ok) return;
         MI.storage.deleteSession(delBtn.dataset.id);
         MI.extras.renderSearches();
         MI.extras.renderReports();
-      }
+      });
     }
   });
 };

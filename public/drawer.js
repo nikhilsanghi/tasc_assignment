@@ -216,15 +216,6 @@ MI.drawer.stepDetail = function stepDetail(delta) {
 
 /* ---------- export (built from a stored session — live or historical, same code path) ---------- */
 
-MI.drawer.mdToHtml = function mdToHtml(md) {
-  return md.split("\n").map((line) => {
-    if (line.startsWith("# ")) return `<h1>${line.slice(2)}</h1>`;
-    if (line.startsWith("## ")) return `<h2>${line.slice(3)}</h2>`;
-    if (line.startsWith("| ")) return `<div class="md-row">${line}</div>`;
-    return `<p>${line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")}</p>`;
-  }).join("");
-};
-
 MI.drawer.download = function download(filename, content, type) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -238,10 +229,15 @@ MI.drawer.download = function download(filename, content, type) {
 };
 
 MI.drawer.paintExportOutput = function paintExportOutput(result, roleId) {
+  const mdName = `shortlist_${roleId}.md`;
+  const auditName = `audit_${roleId}.json`;
   MI.el("shortlist-export-output").classList.remove("hidden");
-  MI.el("shortlist-markdown-preview").innerHTML = MI.drawer.mdToHtml(result.markdown);
-  MI.el("shortlist-download-md-btn").onclick = () => MI.drawer.download(`shortlist_${roleId}.md`, result.markdown, "text/markdown");
-  MI.el("shortlist-download-audit-btn").onclick = () => MI.drawer.download(`audit_${roleId}.json`, JSON.stringify(result.audit_json, null, 1), "application/json");
+  const mdBtn = MI.el("shortlist-download-md-btn");
+  mdBtn.textContent = `Download ${mdName}`;
+  mdBtn.onclick = () => MI.drawer.download(mdName, result.markdown, "text/markdown");
+  const auditBtn = MI.el("shortlist-download-audit-btn");
+  auditBtn.textContent = `Download ${auditName}`;
+  auditBtn.onclick = () => MI.drawer.download(auditName, JSON.stringify(result.audit_json, null, 1), "application/json");
 };
 
 MI.drawer.exportSession = async function exportSession(sessionId) {

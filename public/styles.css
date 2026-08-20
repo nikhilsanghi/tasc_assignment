@@ -183,12 +183,6 @@ select:focus, textarea:focus, input:focus { outline: 2px solid var(--accent); ou
 .empty-state h2 { margin: 0 0 .35rem; font-size: 15px; color: var(--text); }
 .empty-state p { margin: 0 0 1rem; font-size: 13.5px; }
 
-/* ---------- skeleton shimmer ---------- */
-@keyframes shimmer { 0% { background-position: -300px 0; } 100% { background-position: 300px 0; } }
-.skeleton {
-  background: linear-gradient(90deg, var(--bg) 25%, var(--border) 37%, var(--bg) 63%);
-  background-size: 600px 100%; animation: shimmer 1.4s infinite linear; border-radius: var(--radius-s);
-}
 
 /* ---------- misc from original flow (candidate cards get real styling in step 2) ---------- */
 .status-line {
@@ -213,14 +207,6 @@ th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(-
   border-left: 4px solid var(--text-3); border-radius: 4px; font-size: 13px;
 }
 
-.analyst-card { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 1rem; margin-bottom: 1rem; }
-.analyst-card mark { background: #fff2a8; }
-
-#markdown-preview {
-  border: 1px solid var(--border); border-radius: var(--radius-s); padding: 1rem;
-  max-height: 500px; overflow-y: auto; margin-top: 1rem;
-}
-.md-row { font-family: ui-monospace, monospace; font-size: 12.5px; white-space: pre; overflow-x: auto; }
 
 /* ---------- criteria bar ---------- */
 .criteria-bar {
@@ -291,14 +277,8 @@ th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(-
 }
 .candidate-title { font-weight: 600; font-size: 14px; }
 .candidate-location { color: var(--text-2); font-size: 12.5px; margin-top: 2px; }
-.candidate-actions { display: flex; align-items: center; gap: .5rem; flex: none; }
 
-.card-flags { display: flex; flex-wrap: wrap; gap: .3rem; margin: .6rem 0 0 0; }
-.card-flags .pill { background: var(--amber-bg); color: var(--amber); font-size: 11px; margin: 0; }
 .dup-badge { background: var(--red-bg); color: var(--red); }
-
-.card-section { margin-top: 1rem; }
-.card-section .section-label { display: block; margin-bottom: .5rem; }
 
 .subscore-row { display: flex; align-items: center; gap: .6rem; padding: .2rem 0; font-size: 12.5px; }
 .subscore-label { width: 118px; flex: none; color: var(--text-2); }
@@ -316,15 +296,6 @@ th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(-
 .chip-alias { border-color: #bfdbfe; background: var(--accent-bg); color: var(--accent); }
 .chip-semantic { border-color: #ddd6fe; background: var(--violet-bg); color: var(--violet); }
 
-.profile-row { display: flex; flex-wrap: wrap; gap: 1.25rem; font-size: 12.5px; color: var(--text-2); }
-.profile-row strong { color: var(--text); font-weight: 600; }
-
-/* ---------- skeletons (candidate + analyst) ---------- */
-.skeleton-card { border: 1px solid var(--border); border-radius: var(--radius-m); padding: 1.1rem 1.25rem; margin-bottom: .85rem; max-width: 900px; }
-.skeleton-line { height: 12px; margin-bottom: .5rem; }
-.skeleton-line.w-40 { width: 40%; }
-.skeleton-line.w-60 { width: 60%; }
-.skeleton-line.w-90 { width: 90%; }
 
 /* ---------- reranker disagreement badge ---------- */
 .rerank-badge {
@@ -371,7 +342,18 @@ th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(-
 }
 .toast #toast-undo { color: #fff; }
 
+/* ---------- confirm modal ---------- */
+.confirm-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 96;
+  background: var(--surface); border-radius: var(--radius-l); box-shadow: var(--shadow-m);
+  padding: 1.5rem; width: 360px; max-width: 90vw;
+}
+.confirm-modal p { margin: 0 0 1.25rem; font-size: 14px; line-height: 1.5; color: var(--text); }
+.confirm-modal-actions { display: flex; justify-content: flex-end; gap: .6rem; }
+
 .shortlist-note { max-width: 900px; margin-bottom: 1rem; }
+.export-actions { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-top: .5rem; }
+.export-downloads { display: flex; gap: .6rem; flex-wrap: wrap; }
 
 /* ---------- overview ---------- */
 .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; max-width: 900px; margin-bottom: 1.25rem; }
