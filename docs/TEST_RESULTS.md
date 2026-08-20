@@ -457,7 +457,7 @@ status: green · gate: approved 2026-08-20
 **Reading the four-fifths table honestly:** nearly every country is flagged for nearly every role. This is expected and stated plainly, not a bug: at `top_k=10` against pools of tens of candidates per country, selection-rate denominators are tiny, so the four-fifths ratio is extremely noisy — this is the labeled **demonstration** the brief calls for ("production runs this on lawfully collected demographic data"), not a real adverse-impact audit. The mechanism is real and correctly implemented (verified by the 3 hand-built cases in `test_four_fifths_flag_logic`); what it can honestly measure on 120 rows split across 6 countries at n=10 is limited, and the report says so.
 
 ## Phase 8 — product UI (PIN-inspired redesign)
-status: in review · gate: pending Owner review (see `docs/UI_REDESIGN_PRD.md`)
+status: green · gate: approved 2026-08-20
 
 Frontend-only phase (`public/` + one authorized one-line addition to `scripts/dev_server.py`'s static whitelist, D-60). No `core/`/`api/`/`tests/`/`data/`/`prompts/` changes; `pytest -q` staying at 136 passed is itself evidence of that. No `TEST_PLAN.md` IDs are defined for this phase (it's PRD-governed, not brief-governed) — the checklist below is the manual evidence the PRD's gate (§11) calls for.
 
@@ -481,11 +481,25 @@ Frontend-only phase (`public/` + one authorized one-line addition to `scripts/de
 
 **Gate-procedure note:** running `pytest -q -m live` regenerates `prompts/examples/*.json` (live LLM output is non-deterministic run-to-run) and appends to `tests/golden/groundedness_runs.jsonl` / rewrites `tests/golden/export_R004_live.md` as a side effect of earlier phases' test design — all three paths are on Phase 8's no-touch list (`prompts/`, `tests/`). Reverted with `git checkout --` after the live run so the diff stays scoped to `public/`/`docs/`/`CLAUDE.md`; re-ran `pytest -q` after reverting to confirm nothing else depended on the regenerated content.
 
+**Post-initial-build revisions, found during Owner review (D-65–D-73), verified before final gate approval:**
+
+| ID | Status | Evidence |
+|---|---|---|
+| P8-M12 selection-mechanism consolidation | green | D-65: Sourcing's checkbox + Shortlist's separate button (two parallel "I care about this candidate" mechanisms) collapsed to one — Shortlist only, with approve as its own explicit step in the Shortlist view. |
+| P8-M13 role-scoped shortlists | green | D-66: `shortlist_ids` added to the session schema; Shortlist gained its own independent role selector reading the newest session per role from `localStorage`; verified two different roles keep two different shortlists. |
+| P8-M14 native-dialog replacement | green | D-70: both native `confirm()` calls (role switch, delete search) replaced with `MI.confirmModal` — verified both branches (confirm/cancel) work without the silent no-op the native dialogs had. |
+| P8-M15 shortlist checkbox persistence bug | green | D-69: Shortlist table's approve checkbox was missing `data-session-id`, so `approved_ids` never actually updated despite the box visually toggling — caught by running the real checkbox→export flow and seeing the export claim 0 approved candidates; fixed and re-verified end to end. |
+| P8-M16 shortlist carry-forward | green | D-71: re-compiling the same role now carries the prior session's `shortlist_ids` forward instead of silently orphaning it — verified by re-compiling R001 twice and confirming the shortlist survived. |
+| P8-M17 role selector labeling | green | D-72: a "Role" label added above both the Sourcing and Shortlist role switchers — Sourcing had no page heading at all, and Shortlist's own `<h1>Shortlist</h1>` sat directly above its switcher with nothing naming the control itself. Verified live in-browser on both views. |
+| P8-M18 favorability highlighting | green | D-72: green/amber/red palette (reusing the existing 80/60 score-band cutoffs) applied to subscore bars, drawer overlap/gap evidence (`<mark>` + colored dot), and boosts/penalties chips. Verified live against a real R001 analysis: Location subscore at 40% rendered red, matched overlaps rendered green, `nice_to_have` gaps rendered amber vs. `required` gaps rendered red. |
+| P8-M19 cache-hit pill reworded | green | D-72: "cache hit" → "cached · faster" plus an explanatory tooltip, same underlying `cache_read_input_tokens > 0` condition. Verified live — pill appears on a cached analyst call with the new wording. |
+| P8-M20 reranker visibility | green | D-72/D-73: the rerank summary upgraded from muted text to a colored status pill (pending/agree/disagree); a per-row ↑/↓ badge added in its own dedicated "Rerank" table column (not sharing the "Flags" column) in both Sourcing and Shortlist, showing "—" when the reranker didn't flag that candidate. Verified live: pill correctly cycled pending → agree/green through a real analyze+rerank run; column renders in both tables. |
+
 **Two real bugs found and fixed during this phase's own manual testing** (not by inspection — by actually clicking, per the D-57 lesson this PRD explicitly cites):
 - **Export-gating gap (step 3).** The new Shortlist view's Approve & Export button had no dependency on the rerank step finishing, unlike the original Sourcing `#export-section` (hidden until rerank completes). Exporting from Shortlist before rerank finished sent `rerank: null` and the backend correctly 500'd on the unexpected shape. Fixed by gating both entry points behind the same rerank-completion flag (D-61).
 - **`boosts_fired`/`penalties_fired` rendering (step 6, R004 run).** The drawer rendered `${o.evidence}` assuming a string; the real shape is `{concept, evidence: [{field, term, snippet}]}` (`core/scorer.py::_fire_ops` via `core/skills.py::match_terms`), so it printed `[object Object]`. Fixed by rendering `field: "snippet"` pairs; verified live against R004's real `a/b testing emphasis` boost.
 
-<!-- run log -->
+<!-- run log: initial build gate (pre Owner-review revisions) -->
 ```
 $ pytest -q
 ........................................................................ [ 52%]
@@ -501,21 +515,39 @@ PASS lengths (file/function)
 PASS imports (core/api forbidden deps)
 PASS requirements.txt allowlist
 PASS text (paths/emails/hours/forbidden terms)
+```
+
+<!-- run log: closing gate, after D-65–D-73 post-review revisions — 2026-08-20 -->
+```
+$ pytest -q
+........................................................................ [ 52%]
+................................................................         [100%]
+136 passed, 31 deselected in 0.74s
+
+$ pytest -q -m live
+...............................                                          [100%]
+31 passed, 136 deselected in 262.01s (0:04:22)
+
+$ python scripts/check_style.py
+PASS lengths (file/function)
+PASS imports (core/api forbidden deps)
+PASS requirements.txt allowlist
+PASS text (paths/emails/hours/forbidden terms)
 
 $ git diff main --stat
  CLAUDE.md               |   1 +
  README.md               |   4 +
- docs/DECISIONS.md       |   5 +
- docs/TEST_RESULTS.md    |  59 +++++++
- docs/UI_REDESIGN_PRD.md | 140 +++++++++++++++
- public/app.js           | 374 +++++++++++++++++++--------------------
- public/drawer.js        | 247 ++++++++++++++++++++++++++
- public/extras.js        | 253 +++++++++++++++++++++++++++
- public/index.html       | 326 +++++++++++++++++++++++++++-------
- public/styles.css       | 453 ++++++++++++++++++++++++++++++++++++++----------
- public/views.js         | 365 ++++++++++++++++++++++++++++++++++++++
+ docs/DECISIONS.md       |  14 ++
+ docs/TEST_RESULTS.md    |  64 ++++++
+ docs/UI_REDESIGN_PRD.md | 140 +++++++++++++
+ public/app.js           | 404 +++++++++++++++++++-------------------
+ public/drawer.js        | 267 +++++++++++++++++++++++++
+ public/extras.js        | 341 ++++++++++++++++++++++++++++++++
+ public/index.html       | 356 +++++++++++++++++++++++++++------
+ public/styles.css       | 512 +++++++++++++++++++++++++++++++++++++++---------
+ public/views.js         | 331 +++++++++++++++++++++++++++++++
  scripts/dev_server.py   |   2 +-  (D-60, Owner-authorized static-whitelist addition)
- 12 files changed, 1879 insertions(+), 350 deletions(-)
+ 12 files changed, 2080 insertions(+), 356 deletions(-)
 ```
 
-`prompts/examples/*.json`, `tests/golden/export_R004_live.md`, and `tests/golden/groundedness_runs.jsonl` were regenerated as a side effect of the `pytest -q -m live` run above (see the gate-procedure note further up) and reverted with `git checkout --` before this diff was taken.
+`prompts/examples/*.json`, `tests/golden/export_R004_live.md`, and `tests/golden/groundedness_runs.jsonl` were regenerated as a side effect of each `pytest -q -m live` run above (see the gate-procedure note further up) and reverted with `git checkout --` before the respective diff was taken.
