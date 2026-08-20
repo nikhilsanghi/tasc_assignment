@@ -3,9 +3,9 @@ const MI = {};
 
 MI.state = {
   accessCode: null, roles: [], roleId: null, rubric: null, scoreResult: null,
-  analyses: {}, rerankResult: null, approvedIds: new Set(),
+  analyses: {}, rerankResult: null, approvedIds: new Set(), shortlistIds: new Set(),
   compiledAt: null, approvedAt: null, rejected: [], adjustments: [], guidance: "",
-  view: "sourcing",
+  view: "sourcing", drawerCandidateId: null,
 };
 
 MI.el = function el(id) { return document.getElementById(id); };
@@ -143,6 +143,7 @@ async function boot() {
   MI.el("confirm-score-btn").addEventListener("click", () => MI.views.onConfirmScore());
   MI.el("export-btn").addEventListener("click", () => MI.drawer.onExport());
   MI.views.wireCriteriaBar();
+  MI.drawer.wire();
   MI.router.init();
 }
 

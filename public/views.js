@@ -12,11 +12,11 @@ function hashString(s) {
   return h;
 }
 
-function avatarHtml(candidateId) {
+MI.views.avatarHtml = function avatarHtml(candidateId) {
   const [a, b] = AVATAR_GRADIENTS[hashString(candidateId) % AVATAR_GRADIENTS.length];
   const num = (candidateId.match(/\d+/) || [""])[0];
   return `<div class="candidate-avatar" style="background:linear-gradient(135deg, ${a}, ${b})">${num}</div>`;
-}
+};
 
 const FLAG_ICON = '<svg class="icon subscore-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 9v4M12 17v.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>';
 
@@ -74,7 +74,7 @@ const SUBSCORE_LABELS = {
   seniority: "Seniority", location: "Location", availability: "Availability",
 };
 
-function renderSubscores(subscores) {
+MI.views.renderSubscores = function renderSubscores(subscores) {
   return Object.keys(SUBSCORE_LABELS).map((key) => {
     const s = subscores[key];
     if (!s) return "";
@@ -87,19 +87,29 @@ function renderSubscores(subscores) {
         ${s.flags && s.flags.length ? FLAG_ICON : ""}
       </div>`;
   }).join("");
-}
+};
 
 function skillChip(hit) {
   const suffix = hit.tier === "semantic" && hit.similarity != null ? ` ~${hit.similarity.toFixed(2)}` : "";
   return `<span class="chip chip-${hit.tier}">${hit.skill} · ${hit.tier}${suffix}</span>`;
 }
 
-function renderSkillChips(subscores) {
+MI.views.renderSkillChips = function renderSkillChips(subscores) {
   const hits = [...(subscores.required_skills.evidence || []), ...(subscores.nice_to_have.evidence || [])];
   return hits.length ? hits.map(skillChip).join("") : '<span class="text-muted">No skill matches evidenced.</span>';
-}
+};
 
-function renderCandidateCard(entry) {
+MI.views.candidateActionRow = function candidateActionRow(candidateId) {
+  const shortlisted = MI.state.shortlistIds.has(candidateId);
+  const analyzed = Boolean(MI.state.analyses[candidateId]);
+  return `
+    <div class="candidate-action-row">
+      <button type="button" class="btn btn-secondary btn-sm btn-shortlist" data-id="${candidateId}">${shortlisted ? "Shortlisted ✓" : "Shortlist"}</button>
+      <button type="button" class="btn btn-ghost btn-sm btn-details" data-id="${candidateId}" ${analyzed ? "" : "disabled"}>${analyzed ? "Details →" : "Analyzing…"}</button>
+    </div>`;
+};
+
+MI.views.renderCandidateCard = function renderCandidateCard(entry) {
   const isDup = (entry.dup_members || []).length > 1;
   const flags = entry.flags.length
     ? `<div class="card-flags">${entry.flags.map((f) => `<span class="pill">${f}</span>`).join("")}${isDup ? `<span class="pill dup-badge">dup ×${entry.dup_members.length}</span>` : ""}</div>`
@@ -109,7 +119,7 @@ function renderCandidateCard(entry) {
       <input type="checkbox" class="approve-cb card-checkbox" data-id="${entry.candidate_id}" aria-label="Approve ${entry.candidate_id}">
       <div class="candidate-card-header">
         <div class="candidate-identity">
-          ${avatarHtml(entry.candidate_id)}
+          ${MI.views.avatarHtml(entry.candidate_id)}
           <div>
             <div class="candidate-title">${entry.candidate_id} — ${entry.headline || ""}</div>
             <div class="candidate-location">${[entry.location && entry.location.city, entry.country].filter(Boolean).join(", ")}</div>
@@ -117,14 +127,15 @@ function renderCandidateCard(entry) {
         </div>
         <div class="score-badge ${entry.band}"><span class="n">${entry.score}</span><span class="label">FIT SCORE</span></div>
       </div>
+      ${MI.views.candidateActionRow(entry.candidate_id)}
       ${flags}
       <div class="card-section">
         <span class="section-label">Criteria</span>
-        ${renderSubscores(entry.subscores)}
+        ${MI.views.renderSubscores(entry.subscores)}
       </div>
       <div class="card-section">
         <span class="section-label">Matched skills</span>
-        <div class="chip-row">${renderSkillChips(entry.subscores)}</div>
+        <div class="chip-row">${MI.views.renderSkillChips(entry.subscores)}</div>
       </div>
       <div class="card-section">
         <span class="section-label">Profile</span>
@@ -136,15 +147,24 @@ function renderCandidateCard(entry) {
         </div>
       </div>
     </div>`;
-}
+};
+
+MI.views.wireApproveCheckboxes = function wireApproveCheckboxes() {
+  document.querySelectorAll(".approve-cb").forEach((cb) => {
+    cb.checked = MI.state.approvedIds.has(cb.dataset.id);
+    if (cb.dataset.wired) return;
+    cb.dataset.wired = "1";
+    cb.addEventListener("change", (ev) => {
+      if (ev.target.checked) MI.state.approvedIds.add(ev.target.dataset.id);
+      else MI.state.approvedIds.delete(ev.target.dataset.id);
+    });
+  });
+};
 
 MI.views.renderCandidateList = function renderCandidateList(result) {
   MI.el("filtered-out-line").textContent = `filtered out: ${result.filtered_out.length}`;
-  MI.el("candidate-list").innerHTML = result.ranked.map(renderCandidateCard).join("");
-  document.querySelectorAll(".approve-cb").forEach((cb) => cb.addEventListener("change", (ev) => {
-    if (ev.target.checked) MI.state.approvedIds.add(ev.target.dataset.id);
-    else MI.state.approvedIds.delete(ev.target.dataset.id);
-  }));
+  MI.el("candidate-list").innerHTML = result.ranked.map(MI.views.renderCandidateCard).join("");
+  MI.views.wireApproveCheckboxes();
   if (result.insufficient_data.length) {
     MI.el("insufficient-strip").classList.remove("hidden");
     MI.el("insufficient-ids").textContent = result.insufficient_data.join(", ");
@@ -152,6 +172,8 @@ MI.views.renderCandidateList = function renderCandidateList(result) {
 };
 
 MI.views.onConfirmScore = async function onConfirmScore() {
+  MI.el("shortlist-export-btn").disabled = true;
+  MI.el("shortlist-export-wait").classList.remove("hidden");
   const result = await MI.api("score", { role_id: MI.state.roleId, rubric: MI.state.rubric });
   MI.state.scoreResult = result;
   MI.views.renderCandidateList(result);
@@ -218,11 +240,19 @@ MI.views.replaceOrAppend = function replaceOrAppend(card) {
   else MI.el("analyst-cards").appendChild(card);
 };
 
+MI.views.markDetailsReady = function markDetailsReady(candidateId) {
+  document.querySelectorAll(`.btn-details[data-id="${candidateId}"]`).forEach((btn) => {
+    btn.disabled = false;
+    btn.textContent = "Details →";
+  });
+};
+
 MI.views.analyzeOne = async function analyzeOne(entry) {
   try {
     const result = await MI.api("analyze", { role_id: MI.state.roleId, candidate_id: entry.candidate_id, rubric: MI.state.rubric });
     MI.state.analyses[entry.candidate_id] = result;
     MI.views.renderCard(entry, result);
+    MI.views.markDetailsReady(entry.candidate_id);
     return result;
   } catch (e) {
     MI.views.renderErrorCard(entry, e);
@@ -250,4 +280,6 @@ MI.views.onRerank = async function onRerank(ranked) {
     ? result.disagreements.map((d) => `<span class="rerank-badge"><strong>${d.candidate_id}</strong>: det #${d.det_rank} → llm #${d.llm_rank} — ${d.rationale}</span>`).join("")
     : "<p>Reranker agrees with the deterministic order.</p>";
   MI.el("export-section").classList.remove("hidden");
+  MI.el("shortlist-export-btn").disabled = false;
+  MI.el("shortlist-export-wait").classList.add("hidden");
 };

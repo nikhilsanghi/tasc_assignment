@@ -148,16 +148,29 @@
       </section>
     </section>
 
-    <!-- Shortlist: candidates flagged from Sourcing, built in step 3 -->
+    <!-- Shortlist: candidates flagged from Sourcing -->
     <section id="view-shortlist" class="view hidden">
       <header class="view-header"><h1>Shortlist</h1></header>
-      <div class="empty-state">
+      <div id="shortlist-empty" class="empty-state">
         <div class="empty-state-icon">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg>
         </div>
         <h2>No candidates shortlisted</h2>
         <p>Shortlist candidates from Sourcing to review and approve them here.</p>
         <a href="#/sourcing" class="btn btn-primary">Go to Sourcing</a>
+      </div>
+      <div id="shortlist-content" class="hidden">
+        <p class="text-muted shortlist-note">Nothing is exported without your explicit approval.</p>
+        <div id="shortlist-list" class="candidate-list"></div>
+        <section class="card">
+          <button id="shortlist-export-btn" class="btn btn-primary" disabled>Approve &amp; export</button>
+          <p id="shortlist-export-wait" class="text-muted">Waiting for candidate analysis to finish…</p>
+          <div id="shortlist-export-output" class="hidden">
+            <div id="shortlist-markdown-preview"></div>
+            <button id="shortlist-download-md-btn" class="btn btn-secondary">Download .md</button>
+            <button id="shortlist-download-audit-btn" class="btn btn-secondary">Download audit.json</button>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -199,6 +212,29 @@
     </section>
 
   </main>
+
+  <div id="drawer-overlay" class="drawer-overlay hidden"></div>
+  <aside id="detail-drawer" class="drawer hidden" aria-hidden="true">
+    <header class="drawer-header">
+      <div class="drawer-nav">
+        <button id="drawer-prev" class="btn-icon" type="button" aria-label="Previous candidate">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        </button>
+        <button id="drawer-next" class="btn-icon" type="button" aria-label="Next candidate">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+      <button id="drawer-close" class="btn-icon" type="button" aria-label="Close detail">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+    <div id="drawer-body" class="drawer-body"></div>
+  </aside>
+
+  <div id="toast" class="toast hidden" role="status">
+    <span id="toast-message"></span>
+    <button id="toast-undo" class="btn-ghost btn-sm hidden" type="button">Undo</button>
+  </div>
 </div>
 
 <script src="/app.js" defer></script>
