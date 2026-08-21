@@ -122,6 +122,13 @@ body {
   border-radius: var(--radius-s); border: 1px solid transparent;
   padding: .55rem 1rem; cursor: pointer; white-space: nowrap;
 }
+.btn.busy { pointer-events: none; opacity: .75; }
+.btn.busy::before {
+  content: ""; width: 13px; height: 13px; flex: none; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .btn-primary { background: var(--accent); color: #fff; }
 .btn-primary:hover { background: #1d4ed8; }
 .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border-2); }

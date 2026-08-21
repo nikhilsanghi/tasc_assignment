@@ -191,6 +191,7 @@ MI.drawer.retryAnalysis = function retryAnalysis(candidateId) {
   const ctx = MI.drawer.context;
   const entry = ctx.ranked.find((e) => e.candidate_id === candidateId);
   if (!entry) return;
+  MI.views.setBusy("drawer-retry-analysis", true);
   MI.views.analyzeOne(entry).then(() => MI.drawer.renderDetail(candidateId));
 };
 
@@ -254,12 +255,15 @@ MI.drawer.exportSession = async function exportSession(sessionId) {
       decomposition: {}, compiled_at: session.created_at, approved_at: new Date().toISOString(),
     },
   };
+  MI.views.setBusy("shortlist-export-btn", true);
   let result;
   try {
     result = await MI.api("export", body);
   } catch (err) {
     MI.views.showActionError("shortlist-export-btn", err);
     return;
+  } finally {
+    MI.views.setBusy("shortlist-export-btn", false);
   }
   MI.views.clearActionError("shortlist-export-btn");
   MI.storage.updateSessionById(sessionId, { status: "exported", export: { markdown: result.markdown, audit_json: result.audit_json } });
