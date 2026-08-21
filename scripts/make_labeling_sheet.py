@@ -1,4 +1,4 @@
-"""Generate the Owner's golden-set labeling sheet (D-32)."""
+"""Generate the golden-set labeling sheet for hand grading."""
 import sys
 import pathlib
 

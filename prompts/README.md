@@ -9,7 +9,7 @@ Every prompt below is rendered as a stable system-prompt prefix (see `core/llm.p
 | Reranker | `reranker.md` | `7faf458fd583` | `core/reranker.py::rerank`, via `/api/rerank` | yes |
 | Judge | `judge.md` | `3967985c7a17` | `scripts/eval_live.py::judge_candidate`, via `scripts/run_evals.py` §6 | evals only — never called in the product's ranking or scoring path |
 
-Hashes change if a prompt file's text changes; if the numbers above ever drift from `python3 -c "from core import llm; print(llm.prompt_hash('compiler'))"` (etc.), trust the live command, not this table — this table is a snapshot taken at the end of Phase 7.
+Hashes change if a prompt file's text changes; if the numbers above ever drift from `python3 -c "from core import llm; print(llm.prompt_hash('compiler'))"` (etc.), trust the live command, not this table — this table is a snapshot taken at the final commit.
 
 ## What each prompt does
 
@@ -19,7 +19,7 @@ Hashes change if a prompt file's text changes; if the numbers above ever drift f
 
 **`reranker.md`** — an independent, holistic second opinion on shortlist ordering, run once per session (single pass, never iterative). It never changes the deterministic score or order; it only returns a full re-ordering plus one-sentence rationales, which the scorer compares against its own ranking to surface `|Δrank| ≥ 2` disagreements as flags for the recruiter. The prompt explicitly bars it from weighing any banned criterion (nationality, age, gender, religion, …).
 
-**`judge.md`** — evaluation-only. Grades a candidate 0–3 against a role's requirements using the same rubric a human recruiter uses when labeling the golden set, so `scripts/run_evals.py` §6 can report Cohen's κ between the judge and the Owner's own labels. Never touches the product's ranking or scoring path.
+**`judge.md`** — evaluation-only. Grades a candidate 0–3 against a role's requirements using the same rubric a human recruiter uses when labeling the golden set, so `scripts/run_evals.py` §6 can report Cohen's κ between the judge and the hand-graded labels. Never touches the product's ranking or scoring path.
 
 ## Examples
 

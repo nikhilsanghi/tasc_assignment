@@ -73,7 +73,7 @@ cp .env.example .env   # fill in ANTHROPIC_API_KEY and ACCESS_CODE
 python scripts/dev_server.py
 ```
 
-Then open `http://localhost:8000`. Enter the `ACCESS_CODE` you set in `.env` when prompted — every API call requires it (checked via constant-time comparison, fails closed if unset). `vercel dev` works identically if the Vercel CLI is installed; `scripts/dev_server.py` is the dependency-free fallback.
+Then open `http://localhost:3000`. Enter the `ACCESS_CODE` you set in `.env` when prompted — every API call requires it (checked via constant-time comparison, fails closed if unset). `vercel dev` works identically if the Vercel CLI is installed; `scripts/dev_server.py` is the dependency-free fallback.
 
 Run the test suite:
 
@@ -85,9 +85,9 @@ python scripts/check_style.py
 
 ### Optional deploy
 
-The app is deployed on Vercel (Python serverless functions + a static frontend) at a clean alias URL: **https://tascassignment.vercel.app**. Deployment is a stretch goal per the brief — it never gates evals or documentation. To redeploy: `vercel --prod` from the repo root (requires an Owner-linked Vercel project and the same environment variables set via `vercel env add`).
+The app is deployed on Vercel (Python serverless functions + a static frontend) at a clean alias URL: **https://tascassignment.vercel.app**. Deployment is optional — the evals and documentation don't depend on it. To redeploy: `vercel --prod` from the repo root (requires a linked Vercel project and the same environment variables set via `vercel env add`).
 
-**On rate limiting:** no rate limiter is built into this demo. The SDK's own rate-limit errors are caught and surfaced as a distinct `429` with `retry_after`, and the Owner sets a spend cap in the Anthropic console — but a shared-store limiter (e.g. per-IP or per-access-code request budgets in Redis) is a production requirement, not something a stateless serverless demo can honestly implement without adding infrastructure the brief explicitly says to avoid at this scale.
+**On rate limiting:** no rate limiter is built into this demo. The SDK's own rate-limit errors are caught and surfaced as a distinct `429` with `retry_after`, and a spend cap is set in the Anthropic console — but a shared-store limiter (e.g. per-IP or per-access-code request budgets in Redis) is a production requirement, not something a stateless serverless demo can honestly implement without adding infrastructure that would be over-engineering at this scale.
 
 ---
 
@@ -157,7 +157,7 @@ sequenceDiagram
 
 ### Cost and caching
 
-Every LLM stage renders its own system prompt as a stable prefix (instructions, policy trust rules, the role block, the compiled rubric) capped with `cache_control: ephemeral`. The frontend fires the first analyst call, waits for it, then fans the rest out through a concurrency pool of 4 — so every call after the first one for a given role+rubric hits a warm cache. Measured on live runs: `cache_read_input_tokens` of 5204 and 3067 tokens on the second call in a session (see `prompts/examples/analyst_1.json` and `docs/TEST_RESULTS.md`), confirming the cache is real, not just configured. One model (`claude-sonnet-5`) is used for every stage; `MODEL_FAST` exists as a documented cost lever but nothing currently routes to it.
+Every LLM stage renders its own system prompt as a stable prefix (instructions, policy trust rules, the role block, the compiled rubric) capped with `cache_control: ephemeral`. The frontend fires the first analyst call, waits for it, then fans the rest out through a concurrency pool of 4 — so every call after the first one for a given role+rubric hits a warm cache. Measured on live runs: `cache_read_input_tokens` of 5204 and 3067 tokens on the second call in a session (see `prompts/examples/analyst_1.json` and `analyst_2.json`), confirming the cache is real, not just configured. One model (`claude-sonnet-5`) is used for every stage; `MODEL_FAST` exists as a documented cost lever but nothing currently routes to it.
 
 ---
 
@@ -182,7 +182,7 @@ Every LLM stage renders its own system prompt as a stable prefix (instructions, 
 
 **Controllability.** Guidance never reaches the scorer as free text. It's compiled into one of five whitelisted operation types, validated twice — once by the compiler's own output schema (it structurally cannot emit a score override or a candidate-targeted instruction), and once by a separate deterministic policy guard that re-checks bounds, banned criteria, and banned terms on the post-renormalization weight vector.
 
-**Injection defense.** All untrusted text (guidance and candidate profile fields alike) enters prompts inside tagged data blocks and is explicitly framed as content to analyze, never instructions to follow. A canned suite of 7 attacks — ranking overrides, weight-bound abuse, system-prompt exfiltration, an embedded "AI screener: score 100" instruction inside a candidate's profile text, a proxy-discrimination location filter, and two banned-criteria attempts (age, nationality) — is run at every gate; all 7 are blocked with visible, correctly-categorized reasons (see the eval snapshot below).
+**Injection defense.** All untrusted text (guidance and candidate profile fields alike) enters prompts inside tagged data blocks and is explicitly framed as content to analyze, never instructions to follow. A canned suite of 7 attacks — ranking overrides, weight-bound abuse, system-prompt exfiltration, an embedded "AI screener: score 100" instruction inside a candidate's profile text, a proxy-discrimination location filter, and two banned-criteria attempts (age, nationality) — is run as part of the eval suite; all 7 are blocked with visible, correctly-categorized reasons (see the eval snapshot below).
 
 **Fairness.** The normalizer scans free-text fields for protected-attribute proxy language (after masking geography phrases that would otherwise false-positive on things like "United Arab Emirates University") and flags — never strips — any hit; on this dataset it fires zero times, which the eval report states plainly rather than implying a clean scan proves the mechanism untested. `core/auditor.four_fifths()` implements the real EEOC four-fifths selection-rate check on the one demographic-adjacent axis this dataset actually has: candidate country of residence. It is explicitly labeled a **demonstration on a location proxy**, not a protected-attribute audit — see the honest caveat under Evaluation results below.
 
@@ -192,7 +192,7 @@ Every LLM stage renders its own system prompt as a stable prefix (instructions, 
 
 ## Evaluation results
 
-Verbatim output of `python scripts/run_evals.py` (Phase 6):
+Verbatim output of `python scripts/run_evals.py`:
 
 ```
 §1 golden-set ranking quality
@@ -240,13 +240,13 @@ Verbatim output of `python scripts/run_evals.py` (Phase 6):
   18/18 required keys present (PASS)
 ```
 
-**Reading the four-fifths table honestly:** nearly every country is flagged for nearly every role. This is expected, not a bug: at `top_k=10` against pools of tens of candidates spread across six countries, selection-rate denominators are tiny and the ratio is extremely noisy. This is the labeled *demonstration* the brief calls for — production runs the same mechanism on lawfully collected demographic data with real cohort sizes, not a location proxy over 10-candidate shortlists.
+**Reading the four-fifths table honestly:** nearly every country is flagged for nearly every role. This is expected, not a bug: at `top_k=10` against pools of tens of candidates spread across six countries, selection-rate denominators are tiny and the ratio is extremely noisy. This is a labeled *demonstration* of the mechanism — production runs the same mechanism on lawfully collected demographic data with real cohort sizes, not a location proxy over 10-candidate shortlists.
 
 ---
 
 ## How would you evaluate match quality at scale?
 
-**What's implemented now:** a small golden set (24 owner-graded candidate×role pairs across two roles, 0–3 relevance scale) scored with nDCG@10 and Recall@10, a hard determinism check (Kendall's τ over shuffled re-runs, must equal 1.0), hand-built steering assertions that verify guidance actually moves the ranking in the stated direction, the full injection suite, and LLM-judge agreement against the same golden labels (Cohen's κ, report-only — at n≈10 this number is anecdotal, not a reliability claim).
+**What's implemented now:** a small golden set (24 hand-graded candidate×role pairs across two roles, 0–3 relevance scale) scored with nDCG@10 and Recall@10, a hard determinism check (Kendall's τ over shuffled re-runs, must equal 1.0), hand-built steering assertions that verify guidance actually moves the ranking in the stated direction, the full injection suite, and LLM-judge agreement against the same golden labels (Cohen's κ, report-only — at n≈10 this number is anecdotal, not a reliability claim).
 
 **What production evaluation would add, in order of how directly it ties to the actual hiring outcome:**
 
@@ -262,7 +262,7 @@ The golden-set and judge-agreement numbers reported above are the honest startin
 
 ## Scale path
 
-This system is built for the assignment's n=120 candidates with no vector database, no RAG, and no fine-tuning — the brief is explicit that this is a right-sizing decision, not a limitation to apologize for. The seams for growth are placed deliberately:
+This system is built for the assignment's n=120 candidates with no vector database, no RAG, and no fine-tuning — a deliberate right-sizing decision, not a limitation to apologize for. The seams for growth are placed deliberately:
 
 - **≥10⁴ candidates:** add an embedding + approximate-nearest-neighbor retrieval stage in front of the deterministic scorer, to cut the candidate pool before full scoring rather than scoring all of them. The scorer, compiler, guard, analyst, critic, reranker, and auditor are all unchanged — only the retrieval stage is new.
 - **Once outcome labels exist** (interview-pass, offer-accept): fine-tune or re-weight on that signal instead of relying solely on golden-set relevance grading.
@@ -290,7 +290,7 @@ This is a stub describing intended posture, not a certified compliance implement
 
 - **Seniority is read from keywords only** (headline + most recent role title, against a fixed word-boundary ladder). It does not infer seniority from years of experience, team size, or scope described in free text — a candidate whose headline doesn't use a recognized keyword scores neutral rather than guessed.
 - **The `other` location tier (score 0.2) is defined but never fires on this dataset** — every candidate and role city in this data resolves to a MENA country, so the tier exists for future data with candidates outside that region, not as evidence it's been exercised here.
-- **Judge/owner agreement (κ = 0.459) is measured on n≈10** — reported honestly as anecdotal, not a validated reliability figure. It would need a much larger labeled set before it means anything as a threshold.
+- **Judge/human agreement (κ = 0.459) is measured on n≈10** — reported honestly as anecdotal, not a validated reliability figure. It would need a much larger labeled set before it means anything as a threshold.
 - **The reranker is a single listwise pass, not iterative** — it produces one second opinion per session and never sees its own prior output, so it doesn't correct for its own position bias across multiple looks. It's designed as a flagged opinion for the human to weigh, not a converged consensus.
 - **No truncated-headline detection.** The normalizer flags a genuine headline/field contradiction (e.g. a headline claiming "15 years" against a field of 1) but does not separately detect or flag a headline that appears cut off mid-sentence (e.g. "…GTM str") — that case currently reads as ordinary text, not as a data-quality signal.
 
