@@ -50,6 +50,13 @@ MI.views.clearActionError = function clearActionError(anchorId) {
   if (box) box.remove();
 };
 
+MI.views.setBusy = function setBusy(id, busy) {
+  const btn = MI.el(id);
+  if (!btn) return;
+  btn.classList.toggle("busy", busy);
+  btn.disabled = busy;
+};
+
 /* ---------- criteria bar ---------- */
 
 MI.views.wireCriteriaBar = function wireCriteriaBar() {
@@ -85,6 +92,7 @@ MI.views.resetSourcingUI = function resetSourcingUI() {
 
 MI.views.onCompile = async function onCompile() {
   MI.state.guidance = MI.el("guidance-input").value;
+  MI.views.setBusy("compile-btn", true);
   try {
     const result = await MI.api("compile_rubric", { role_id: MI.state.roleId, guidance: MI.state.guidance });
     MI.views.clearActionError("compile-btn");
@@ -105,6 +113,8 @@ MI.views.onCompile = async function onCompile() {
     MI.el("echo-section").classList.remove("hidden");
   } catch (err) {
     MI.views.showActionError("compile-btn", err);
+  } finally {
+    MI.views.setBusy("compile-btn", false);
   }
 };
 
@@ -251,6 +261,7 @@ MI.views.renderCandidateList = function renderCandidateList(result) {
 };
 
 MI.views.onConfirmScore = async function onConfirmScore() {
+  MI.views.setBusy("confirm-score-btn", true);
   try {
     const result = await MI.api("score", { role_id: MI.state.roleId, rubric: MI.state.rubric });
     MI.views.clearActionError("confirm-score-btn");
@@ -261,8 +272,10 @@ MI.views.onConfirmScore = async function onConfirmScore() {
     });
     MI.views.renderCandidateList(result);
     MI.el("score-section").classList.remove("hidden");
+    MI.views.setBusy("confirm-score-btn", false);
     await MI.views.analyzeAll(result.ranked);
   } catch (err) {
+    MI.views.setBusy("confirm-score-btn", false);
     MI.views.showActionError("confirm-score-btn", err);
   }
 };
