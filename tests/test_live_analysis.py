@@ -1,4 +1,4 @@
-"""Live Phase 4 tests: prefix tokens, groundedness gate (D-35), cache, reranker, injection attack 4."""
+"""Live analyst/critic/reranker tests: prefix tokens, groundedness (D-35), cache, reranker, injection attack 4."""
 import copy
 import json
 from datetime import datetime, timezone

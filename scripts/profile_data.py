@@ -1,4 +1,4 @@
-"""Verify the brief §5 data facts against the real CSVs (D-49)."""
+"""Verify the documented data facts against the real CSVs (D-49)."""
 import sys
 import pathlib
 
